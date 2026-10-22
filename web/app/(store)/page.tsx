@@ -15,7 +15,7 @@ const PERKS = [
   { icon: Truck, title: "Fast, free delivery", body: "Free shipping on orders over $50, tracked to your door." },
   { icon: BadgePercent, title: "Wholesale pricing", body: "Every product shows retail and wholesale price side-by-side." },
   { icon: FileText, title: "Order tracking", body: "Follow every order from checkout to your door, live." },
-  { icon: Building2, title: "Team accounts", body: "Users, roles, credit limits and invoices for your company." },
+  { icon: Building2, title: "Secure checkout", body: "Card, bank transfer or cash on delivery — your payment stays protected." },
 ];
 
 export default async function HomePage() {
@@ -69,8 +69,8 @@ export default async function HomePage() {
             <div className="absolute -top-24 -right-24 size-96 rounded-full bg-brand-500/40 blur-3xl" />
             <div className="relative grid items-center gap-8 md:grid-cols-2">
               <div>
-                <p className="text-xs font-semibold tracking-[0.2em] text-brand-300 uppercase">For business</p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Equip your whole team at wholesale prices.</h2>
+                <p className="text-xs font-semibold tracking-[0.2em] text-brand-300 uppercase">Members get more</p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Unlock member pricing and faster checkout.</h2>
                 <p className="mt-4 text-white/70">Create an account to check out faster, save your addresses and track every order in one place.</p>
                 <div className="mt-7 flex flex-wrap gap-3">
                   <Link href="/account" className="btn h-12 bg-white px-6 text-navy hover:bg-brand-50">My account</Link>
