@@ -7,8 +7,8 @@ export function Logo({ className = "", href = "/", light = false }: { className?
       <Image
         src="/brand/logo-mark.png"
         alt="I.STORE"
-        width={762}
-        height={1170}
+        width={611}
+        height={895}
         quality={100}
         className="h-11 w-auto transition-transform duration-500 ease-out-expo group-hover:scale-110 group-hover:-rotate-6"
         priority
