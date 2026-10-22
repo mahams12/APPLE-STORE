@@ -34,7 +34,7 @@ export function Hero() {
             </m.span>
           </h1>
           <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45, duration: 0.8 }} className="mt-6 max-w-lg text-lg text-muted">
-            iPhone, iPad, Mac, Watch and AirPods — the latest Apple gear, shipped fast to your door with prices you'll love.
+            iPhone, iPad, Mac, Watch and AirPods — the latest Apple gear, shipped fast to your door with prices you&rsquo;ll love.
           </m.p>
           <m.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, duration: 0.7, ease }} className="mt-8 flex flex-wrap gap-3">
             <Link href="/shop" className="btn btn-primary h-12 px-7 text-base">
