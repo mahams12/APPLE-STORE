@@ -11,8 +11,8 @@ export function AuthCard({ title, subtitle, children, footer }: { title: string;
           <Image src="/products/phone-hand.jpg" alt="" fill sizes="50vw" className="object-cover" priority />
           <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/30 to-transparent" />
           <div className="absolute inset-x-10 bottom-10 text-white">
-            <p className="text-3xl font-semibold tracking-tight">Apple products at business prices.</p>
-            <p className="mt-2 text-white/70">Track orders, request quotes and manage your company from one account.</p>
+            <p className="text-3xl font-semibold tracking-tight">Everything Apple, in one place.</p>
+            <p className="mt-2 text-white/70">Track orders, save your addresses and check out faster.</p>
           </div>
         </div>
         <m.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="flex flex-col justify-center p-8 sm:p-12">

@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, m, useMotionValueEvent, useScroll } from "framer-motion";
-import { ChevronDown, CircleDollarSign, FileText, Headset, LogOut, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { ChevronDown, CircleDollarSign, Headset, LogOut, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -79,9 +79,6 @@ export function Header() {
         </form>
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <span className="hidden sm:contents">
-            <IconButton label="Request a quote" href="/cart#quote">
-              <FileText size={18} />
-            </IconButton>
             <IconButton label="Support" href="/services">
               <Headset size={18} />
             </IconButton>
