@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, m } from "framer-motion";
-import { Building2, ChevronDown, ClipboardList, FileText, History, LayoutDashboard, LogOut, Package, ShieldCheck, Tag, Users, Warehouse, X } from "lucide-react";
+import { Building2, ChevronDown, ClipboardList, History, LayoutDashboard, LogOut, Package, ShieldCheck, Tag, Users, Warehouse, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -14,7 +14,6 @@ type Item = { href: string; label: string; icon: typeof Users; children?: { href
 const NAV: Item[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/company", label: "Company Information", icon: Building2, children: [{ href: "/admin/company", label: "Details" }, { href: "/admin/company#credit", label: "Credit" }, { href: "/admin/company#addresses", label: "Addresses" }] },
-  { href: "/admin/quotes", label: "Quotes", icon: FileText },
   { href: "/admin/orders", label: "Orders", icon: ClipboardList, children: [{ href: "/admin/orders?tab=open", label: "Open Orders" }, { href: "/admin/orders?tab=confirmed", label: "Confirmed Orders" }, { href: "/admin/orders?tab=invoices", label: "Invoices" }] },
   { href: "/admin/users", label: "User Management", icon: Users, children: [{ href: "/admin/users", label: "Users" }, { href: "/admin/roles", label: "Roles" }] },
   { href: "/admin/products", label: "Products", icon: Package },

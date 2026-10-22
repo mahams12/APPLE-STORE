@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, m, useMotionValueEvent, useScroll } from "framer-motion";
-import { ChevronDown, CircleDollarSign, FileText, Headset, LayoutDashboard, LogOut, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { ChevronDown, CircleDollarSign, FileText, Headset, LogOut, Menu, Search, ShoppingBag, User, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,7 +16,6 @@ const NAV = [
   { href: "/promotions", label: "Promotions" },
   { href: "/services", label: "Services" },
   { href: "/about", label: "About Us" },
-  { href: "/dashboard", label: "Dashboard" },
 ];
 
 const CATEGORY_IMAGE: Record<string, string> = Object.fromEntries(CATEGORIES.map((c) => [c, PRODUCTS.find((p) => p.category === c)?.image ?? ""]));
@@ -102,7 +101,6 @@ export function Header() {
                 <m.div initial={{ opacity: 0, y: 8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.96 }} className="absolute right-0 mt-3 w-56 origin-top-right rounded-2xl border border-line bg-white p-2 shadow-xl" onMouseLeave={() => setMenu(false)}>
                   <p className="px-3 py-2 text-xs text-muted">Signed in as<br /><span className="font-medium text-ink">{user.email}</span></p>
                   <Link onClick={() => setMenu(false)} href="/account" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-canvas"><User size={16} /> My account</Link>
-                  <Link onClick={() => setMenu(false)} href="/dashboard" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-canvas"><LayoutDashboard size={16} /> Dashboard</Link>
                   <button onClick={() => { setMenu(false); void logout(); }} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-danger hover:bg-danger/5"><LogOut size={16} /> Sign out</button>
                 </m.div>
               )}

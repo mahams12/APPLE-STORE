@@ -5,7 +5,6 @@ import { ArrowRight, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
-import { QuoteForm } from "@/components/checkout/quote-form";
 import { Summary } from "@/components/checkout/summary";
 import { EmptyState, Skeleton } from "@/components/ui/misc";
 import { useCart } from "@/lib/cart-store";
@@ -49,7 +48,6 @@ export default function CartPage() {
               </ul>
             )}
           </div>
-          <div id="quote" className="card scroll-mt-40 p-6"><QuoteForm suggested={cart.totals.total} /></div>
         </div>
         <div className="lg:sticky lg:top-36">
           <Summary cta={cart.items.length > 0 && <Link href="/checkout" className="btn btn-primary mt-6 h-12 w-full text-base">Buy Now <ArrowRight size={18} /></Link>} />

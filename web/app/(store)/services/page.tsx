@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Headset, RotateCcw, ShieldCheck, Truck } from "lucide-react";
-import { QuoteForm } from "@/components/checkout/quote-form";
 import { Reveal } from "@/components/ui/reveal";
 
 export const metadata: Metadata = { title: "Services & support" };
@@ -13,8 +12,8 @@ const SERVICES = [
 ];
 
 const FAQ = [
-  ["Do you offer wholesale pricing?", "Yes. Every product shows its wholesale price. Larger orders can request a custom quote."],
-  ["Can my company buy on credit?", "Approved business accounts get a credit limit and can pay by bank transfer on invoice."],
+  ["Do you offer wholesale pricing?", "Yes. Every product shows its wholesale price — the more you buy, the better the unit price."],
+  ["How do I pay?", "By card at checkout, or choose bank transfer / cash on delivery. Card payments are handled on our secure hosted page."],
   ["Are products genuine?", "All products are brand new, sealed and sourced from authorised distributors."],
   ["How do I track my order?", "Open your account, choose the order and you'll see live status and the tracking number."],
 ];
@@ -42,7 +41,15 @@ export default function ServicesPage() {
             </details>
           ))}
         </Reveal>
-        <Reveal className="card p-6"><QuoteForm /></Reveal>
+        <Reveal className="card p-6">
+          <h2 className="text-xl font-semibold">Still need help?</h2>
+          <p className="mt-2 text-sm text-muted">Our team replies within one business day.</p>
+          <div className="mt-5 space-y-3 text-sm">
+            <p className="flex items-center justify-between rounded-xl bg-canvas px-4 py-3"><span className="text-muted">Email</span><span className="font-medium">hello@istore.example</span></p>
+            <p className="flex items-center justify-between rounded-xl bg-canvas px-4 py-3"><span className="text-muted">Phone</span><span className="font-medium">+1 (415) 555-0190</span></p>
+            <p className="flex items-center justify-between rounded-xl bg-canvas px-4 py-3"><span className="text-muted">Hours</span><span className="font-medium">Mon–Fri, 9am–6pm PT</span></p>
+          </div>
+        </Reveal>
       </div>
     </div>
   );

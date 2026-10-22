@@ -14,7 +14,7 @@ export const revalidate = 60;
 const PERKS = [
   { icon: Truck, title: "Fast, free delivery", body: "Free shipping on orders over $50, tracked to your door." },
   { icon: BadgePercent, title: "Wholesale pricing", body: "Every product shows retail and wholesale price side-by-side." },
-  { icon: FileText, title: "Instant quotes", body: "Name your price for large orders and get an answer fast." },
+  { icon: FileText, title: "Order tracking", body: "Follow every order from checkout to your door, live." },
   { icon: Building2, title: "Team accounts", body: "Users, roles, credit limits and invoices for your company." },
 ];
 
@@ -71,10 +71,10 @@ export default async function HomePage() {
               <div>
                 <p className="text-xs font-semibold tracking-[0.2em] text-brand-300 uppercase">For business</p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Equip your whole team at wholesale prices.</h2>
-                <p className="mt-4 text-white/70">Open a company account to manage users and roles, set credit limits and track every order and invoice in one dashboard.</p>
+                <p className="mt-4 text-white/70">Create an account to check out faster, save your addresses and track every order in one place.</p>
                 <div className="mt-7 flex flex-wrap gap-3">
-                  <Link href="/dashboard" className="btn h-12 bg-white px-6 text-navy hover:bg-brand-50">Open dashboard</Link>
-                  <Link href="/cart#quote" className="btn h-12 border border-white/25 px-6 text-white hover:bg-white/10">Get a quote</Link>
+                  <Link href="/account" className="btn h-12 bg-white px-6 text-navy hover:bg-brand-50">My account</Link>
+                  <Link href="/shop" className="btn h-12 border border-white/25 px-6 text-white hover:bg-white/10">Start shopping</Link>
                 </div>
               </div>
               <div className="relative hidden aspect-[4/3] overflow-hidden rounded-2xl md:block">
