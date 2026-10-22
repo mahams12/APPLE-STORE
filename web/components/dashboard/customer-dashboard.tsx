@@ -71,9 +71,9 @@ export function CustomerDashboard({ products }: { products: Product[] }) {
         <StatCard label="Credit available" value={money(COMPANY.creditLimit - COMPANY.creditUsed)} icon={<CreditCard size={20} />} />
       </div>
 
-      <div className="grid items-start gap-6 xl:grid-cols-[1fr_380px]">
+      <div className="grid items-start gap-6 xl:grid-cols-[1fr_380px] [&>*]:min-w-0">
         <div className="space-y-6">
-          <Reveal className="card overflow-hidden">
+          <Reveal className="card overflow-x-auto">
             <div className="flex items-center justify-between p-6 pb-3"><h2 className="text-xl font-medium">Open Orders</h2><Link href="/account" className="text-sm text-brand-500 hover:underline">See All</Link></div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[560px] text-sm">
@@ -110,7 +110,7 @@ export function CustomerDashboard({ products }: { products: Product[] }) {
             </ul>
           </Reveal>
 
-          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
             <Reveal className="card p-6">
               <div className="mb-2 flex items-center justify-between"><h2 className="text-xl font-medium">Orders</h2><span className="text-xs text-muted">{demo ? "Orders / month" : "Spend / month"}</span></div>
               <AreaChart data={series} format={(v) => (demo ? `${v} orders` : money(v))} />

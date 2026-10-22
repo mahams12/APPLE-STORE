@@ -169,10 +169,10 @@ export function ShopView({ products }: { products: Product[] }) {
   return (
     <div className="container-x py-8">
       <nav className="mb-5 text-sm text-muted"><Link href="/" className="hover:text-ink">Home</Link> / <span className="text-ink">Shop</span>{q && <> / Search “{q}”</>}</nav>
-      <div className="grid gap-6 lg:grid-cols-[270px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[270px_1fr] [&>*]:min-w-0">
         <aside className="card hidden h-fit p-6 lg:sticky lg:top-36 lg:block">{filters}</aside>
         <div>
-          <div className="card mb-5 flex items-center gap-3 px-4 py-3">
+          <div className="card mb-5 flex flex-wrap items-center gap-3 px-4 py-3">
             <button onClick={() => setDrawer(true)} className="btn btn-outline h-9 px-3 lg:hidden"><SlidersHorizontal size={15} /> Filters{activeCount ? ` (${activeCount})` : ""}</button>
             <span className="hidden text-sm text-muted sm:inline">Sort By:</span>
             <div className="relative">

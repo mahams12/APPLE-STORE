@@ -8,19 +8,19 @@ import { StatusPill } from "@/components/ui/misc";
 import { QUOTES } from "@/lib/catalog";
 import { api, errorMessage } from "@/lib/client";
 import { fmtDate, money } from "@/lib/format";
-import { useAdminData } from "@/lib/use-admin";
+import { pickQuotes, useAdminData } from "@/lib/use-admin";
 import type { Quote } from "@/lib/types";
 
 type Tab = "ALL" | "PENDING" | "ACCEPTED" | "DECLINED";
 
 export default function QuotesPage() {
-  const { data, setData, live, reload } = useAdminData<Quote[]>("/admin/quotes", (r) => (r as { quotes: Quote[] }).quotes, QUOTES);
+  const { data, setData, live, reload } = useAdminData<Quote[]>("/admin/quotes", pickQuotes, QUOTES);
   const [tab, setTab] = useState<Tab>("ALL");
   const list = data.filter((x) => tab === "ALL" || x.status === tab);
   const decide = async (quote: Quote, status: "ACCEPTED" | "DECLINED") => {
     try {
       if (live) {
-        await api(`/admin/quotes/${quote.id}`, { method: "PATCH", json: { status } });
+        await api(`/admin/quotes/${quote.id}`, { method: "PATCH", json: { status: status === "ACCEPTED" ? "Accepted" : "Declined" } });
         await reload();
       } else setData(data.map((x) => (x.id === quote.id ? { ...x, status } : x)));
       toast.success(`Quote ${status.toLowerCase()}`);

@@ -66,7 +66,7 @@ export default function AccountPage() {
 
   return (
     <div className="container-x py-8">
-      <div className="grid items-start gap-6 lg:grid-cols-[260px_1fr]">
+      <div className="grid items-start gap-6 lg:grid-cols-[260px_1fr] [&>*]:min-w-0">
         <aside className="card p-5 lg:sticky lg:top-36">
           <div className="flex items-center gap-3">
             <span className="grid size-12 place-items-center rounded-full bg-gradient-to-br from-brand-400 to-violet font-semibold text-white">{user ? `${user.firstName[0]}${user.lastName[0]}` : <User size={18} />}</span>

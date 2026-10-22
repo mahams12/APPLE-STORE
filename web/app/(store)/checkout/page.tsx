@@ -75,7 +75,7 @@ export default function CheckoutPage() {
   return (
     <form onSubmit={submit} className="container-x py-8">
       <h1 className="mb-6 text-3xl font-semibold tracking-tight">Checkout</h1>
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_380px]">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_380px] [&>*]:min-w-0">
         <div className="space-y-6">
           <m.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="card p-6">
             <div className="flex items-center justify-between"><h2 className="text-lg font-semibold">1. Contact</h2>{!user && <Link href="/account/login?next=/checkout" className="text-sm text-brand-500 hover:underline">Have an account? Sign in</Link>}</div>

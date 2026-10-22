@@ -89,6 +89,7 @@ export class ShopService {
   }
 
   async register(body: { email: string; password: string; firstName: string; lastName: string }, actor: Actor, res: Response) {
+    clearCookie(res, "istore_receipts");
     await this.limit("register", body.email);
     const email = body.email.trim().toLowerCase();
     if (!email.includes("@") || body.password.length < 8) throw new BadRequestException("Use a valid email and a password of at least 8 characters.");
@@ -112,6 +113,7 @@ export class ShopService {
   }
 
   async login(body: { email: string; password: string }, actor: Actor, res: Response) {
+    clearCookie(res, "istore_receipts");
     await this.limit("login", body.email);
     const user = await this.prisma.user.findUnique({ where: { email: body.email.trim().toLowerCase() } });
     if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) throw new UnauthorizedException("Email or password is incorrect.");
@@ -134,6 +136,7 @@ export class ShopService {
     const raw = cookies[kind === "customer" ? "istore_customer" : "istore_admin"];
     if (raw) await this.prisma.session.deleteMany({ where: { tokenHash: hashToken(raw) } });
     clearCookie(res, kind === "customer" ? "istore_customer" : "istore_admin");
+    if (kind === "customer") clearCookie(res, "istore_receipts");
     return { ok: true };
   }
 
@@ -465,7 +468,7 @@ export class ShopService {
     const where = actor.adminId
       ? {}
       : actor.userId
-        ? { OR: [{ userId: actor.userId }, { id: { in: actor.receipts } }] }
+        ? { userId: actor.userId }
         : { id: { in: actor.receipts.length ? actor.receipts : ["none"] } };
     const rows = await this.prisma.order.findMany({ where, include: orderInclude, orderBy: { createdAt: "desc" } });
     return { orders: rows.map(presentOrder) };
@@ -474,7 +477,7 @@ export class ShopService {
   async order(actor: Actor, id: string) {
     const row = await this.prisma.order.findUnique({ where: { id }, include: orderInclude });
     if (!row) throw new NotFoundException("Order not found.");
-    const allowed = actor.adminId || row.userId === actor.userId || actor.receipts.includes(row.id);
+    const allowed = actor.adminId || (row.userId ? row.userId === actor.userId : actor.receipts.includes(row.id));
     if (!allowed) throw new ForbiddenException("You cannot view this order.");
     return presentOrder(row);
   }
@@ -612,7 +615,7 @@ export class ShopService {
   }
 
   async saveCoupon(actor: Actor, body: { code: string; type: string; amount: number; active?: boolean }) {
-    await this.requireAdmin(actor);
+    const admin = await this.requireAdmin(actor);
     const code = body.code.trim().toUpperCase();
     if (!code) throw new BadRequestException("Coupon code is required.");
     const coupon = await this.prisma.coupon.upsert({
@@ -620,6 +623,7 @@ export class ShopService {
       create: { code, type: body.type, amount: body.amount, active: body.active !== false },
       update: { type: body.type, amount: body.amount, active: body.active !== false },
     });
+    await this.audit(admin.id, "coupon.save", "Coupon", coupon.id, "", `${coupon.code} ${coupon.active ? "active" : "inactive"}`);
     return { id: coupon.id, code: coupon.code, type: coupon.type, amount: Number(coupon.amount), active: coupon.active };
   }
 
@@ -664,7 +668,7 @@ export class ShopService {
   }
 
   async saveStaff(actor: Actor, body: { id?: string; firstName: string; lastName: string; email: string; roleId: string; creditLimit: number; status: string; password?: string; address?: string }) {
-    await this.requireAdmin(actor);
+    const admin = await this.requireAdmin(actor);
     if (!body.firstName || !body.email?.includes("@")) throw new BadRequestException("First name and a valid email are required.");
     const existing = body.id ? await this.prisma.adminUser.findUnique({ where: { id: body.id } }) : null;
     if (existing) {
@@ -672,11 +676,13 @@ export class ShopService {
         where: { id: existing.id },
         data: { firstName: body.firstName, lastName: body.lastName, email: body.email.toLowerCase(), roleId: body.roleId, creditLimit: Number(body.creditLimit) || 0, status: body.status, addressNote: body.address || "", ...(body.password ? { passwordHash: await bcrypt.hash(body.password, 10) } : {}) },
       });
+      await this.audit(admin.id, "staff.update", "AdminUser", user.id, existing.email, user.email);
       return user.id;
     }
     const user = await this.prisma.adminUser.create({
       data: { firstName: body.firstName, lastName: body.lastName, email: body.email.toLowerCase(), roleId: body.roleId, creditLimit: Number(body.creditLimit) || 0, status: body.status || "Active", addressNote: body.address || "", passwordHash: await bcrypt.hash(body.password || "ChangeMe!2026", 10) },
     });
+    await this.audit(admin.id, "staff.create", "AdminUser", user.id, "", user.email);
     return user.id;
   }
 
@@ -684,19 +690,22 @@ export class ShopService {
     const admin = await this.requireAdmin(actor);
     if (admin.id === id) throw new BadRequestException("You cannot remove the account you are using.");
     await this.prisma.adminUser.delete({ where: { id } });
+    await this.audit(admin.id, "staff.delete", "AdminUser", id, "", "");
     return { ok: true };
   }
 
   async saveRole(actor: Actor, body: { id?: string; name: string; description: string; permissions: string[]; disabled?: boolean }) {
-    await this.requireAdmin(actor);
+    const admin = await this.requireAdmin(actor);
     if (!body.name) throw new BadRequestException("Role name is required.");
     const permissions = (body.permissions || []).filter((item) => PERMISSIONS.includes(item));
     const existing = body.id ? await this.prisma.role.findUnique({ where: { id: body.id } }) : null;
     if (existing) {
       await this.prisma.role.update({ where: { id: existing.id }, data: { name: body.name, description: body.description, permissions, disabled: Boolean(body.disabled) } });
+      await this.audit(admin.id, "role.update", "Role", existing.id, `${existing.permissions.length} permissions`, `${permissions.length} permissions`);
       return existing.id;
     }
     const role = await this.prisma.role.create({ data: { name: body.name, description: body.description, permissions, disabled: Boolean(body.disabled) } });
+    await this.audit(admin.id, "role.create", "Role", role.id, "", role.name);
     return role.id;
   }
 
@@ -738,8 +747,9 @@ export class ShopService {
   }
 
   async setQuote(actor: Actor, id: string, status: string) {
-    await this.requireAdmin(actor);
-    await this.prisma.quoteRequest.update({ where: { id }, data: { status } });
+    const admin = await this.requireAdmin(actor);
+    const quote = await this.prisma.quoteRequest.update({ where: { id }, data: { status } });
+    await this.audit(admin.id, "quote.update", "QuoteRequest", id, "", quote.status);
     return { ok: true };
   }
 

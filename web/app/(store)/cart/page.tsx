@@ -18,7 +18,7 @@ export default function CartPage() {
   return (
     <div className="container-x py-8">
       <h1 className="mb-6 text-3xl font-semibold tracking-tight">Shopping cart</h1>
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_380px]">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_380px] [&>*]:min-w-0">
         <div className="space-y-6">
           <div className="card p-2 sm:p-4">
             {!ready ? (

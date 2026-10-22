@@ -10,12 +10,12 @@ import { Reveal } from "@/components/ui/reveal";
 import { StatusPill } from "@/components/ui/misc";
 import { ORDERS, ORDER_SERIES, PRODUCTS, QUOTES, STAFF } from "@/lib/catalog";
 import { fmtDate, money } from "@/lib/format";
-import { useAdminData } from "@/lib/use-admin";
+import { pickQuotes, useAdminData } from "@/lib/use-admin";
 import type { Order, Quote } from "@/lib/types";
 
 export default function AdminDashboard() {
   const orders = useAdminData<Order[]>("/orders", (r) => (r as { orders: Order[] }).orders, ORDERS);
-  const quotes = useAdminData<Quote[]>("/admin/quotes", (r) => (r as { quotes: Quote[] }).quotes, QUOTES);
+  const quotes = useAdminData<Quote[]>("/admin/quotes", pickQuotes, QUOTES);
   const live = orders.live;
   const revenue = orders.data.reduce((s, o) => s + (o.status === "Cancelled" || o.status === "Refunded" ? 0 : o.total), 0);
   const series = useMemo(() => {
