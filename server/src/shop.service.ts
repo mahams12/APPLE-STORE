@@ -2,9 +2,13 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundEx
 import bcrypt from "bcryptjs";
 import type { Response } from "express";
 import { PrismaService } from "./prisma.service";
-import { clearCookie, hashToken, newToken, setCookie, sign } from "./auth.util";
+import { clearCookie, hashToken, newToken, setCookie } from "./auth.util";
 import { priceTotals, round2 } from "./pricing";
-import { getPaymentProvider } from "./payments/provider";
+import { PaymentService } from "./payments/payment.service";
+import { RateLimitService } from "./redis/rate-limit";
+import { RedisService } from "./redis/redis.service";
+import { JobsService } from "./jobs/jobs.service";
+import type { EmailTemplate } from "./email/email.service";
 import { logInfo } from "./logger";
 
 type Actor = { userId?: string; adminId?: string; guest?: string; receipts: string[] };
@@ -17,22 +21,28 @@ const PERMISSIONS = [
 
 @Injectable()
 export class ShopService {
-  private loginHits = new Map<string, { count: number; reset: number }>();
   private readonly prisma: PrismaService;
+  private readonly payments: PaymentService;
+  private readonly rateLimit: RateLimitService;
+  private readonly redis: RedisService;
+  private readonly jobs: JobsService;
 
-  constructor(@Inject(PrismaService) prisma: PrismaService) {
+  constructor(
+    @Inject(PrismaService) prisma: PrismaService,
+    @Inject(PaymentService) payments: PaymentService,
+    @Inject(RateLimitService) rateLimit: RateLimitService,
+    @Inject(RedisService) redis: RedisService,
+    @Inject(JobsService) jobs: JobsService,
+  ) {
     this.prisma = prisma;
+    this.payments = payments;
+    this.rateLimit = rateLimit;
+    this.redis = redis;
+    this.jobs = jobs;
   }
 
-  limit(key: string) {
-    const now = Date.now();
-    const hit = this.loginHits.get(key);
-    if (!hit || hit.reset < now) {
-      this.loginHits.set(key, { count: 1, reset: now + 60_000 });
-      return;
-    }
-    hit.count += 1;
-    if (hit.count > 20) throw new BadRequestException("Too many attempts. Wait a minute and try again.");
+  async limit(bucket: string, identity: string) {
+    await this.rateLimit.check(bucket, identity);
   }
 
   async actorFrom(cookies: Record<string, string | undefined>): Promise<Actor> {
@@ -79,7 +89,7 @@ export class ShopService {
   }
 
   async register(body: { email: string; password: string; firstName: string; lastName: string }, actor: Actor, res: Response) {
-    this.limit(`register:${body.email}`);
+    await this.limit("register", body.email);
     const email = body.email.trim().toLowerCase();
     if (!email.includes("@") || body.password.length < 8) throw new BadRequestException("Use a valid email and a password of at least 8 characters.");
     const existing = await this.prisma.user.findUnique({ where: { email } });
@@ -96,12 +106,13 @@ export class ShopService {
     });
     await this.openSession("customer", user.id, res);
     await this.mergeGuestCart(actor.guest, user.id, res);
+    await this.note("welcome", email, {});
     await this.note("verify-email", email, { path: `/account/verify?token=${verifyToken}` });
     return { ok: true, devVerifyPath: process.env.NODE_ENV === "production" ? undefined : `/account/verify?token=${verifyToken}` };
   }
 
   async login(body: { email: string; password: string }, actor: Actor, res: Response) {
-    this.limit(`login:${body.email}`);
+    await this.limit("login", body.email);
     const user = await this.prisma.user.findUnique({ where: { email: body.email.trim().toLowerCase() } });
     if (!user || !(await bcrypt.compare(body.password, user.passwordHash))) throw new UnauthorizedException("Email or password is incorrect.");
     await this.openSession("customer", user.id, res);
@@ -110,7 +121,7 @@ export class ShopService {
   }
 
   async loginAdmin(body: { email: string; password: string }, res: Response) {
-    this.limit(`admin:${body.email}`);
+    await this.limit("admin-auth", body.email);
     const admin = await this.prisma.adminUser.findUnique({ where: { email: body.email.trim().toLowerCase() }, include: { role: true } });
     if (!admin || admin.status !== "Active" || admin.role.disabled || !(await bcrypt.compare(body.password, admin.passwordHash))) {
       throw new UnauthorizedException("Admin email or password is incorrect.");
@@ -127,6 +138,7 @@ export class ShopService {
   }
 
   async forgot(email: string) {
+    await this.limit("password-reset", email || "unknown");
     const user = await this.prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
     if (!user) return { ok: true };
     const token = newToken();
@@ -150,8 +162,9 @@ export class ShopService {
     return { ok: true };
   }
 
-  private async note(template: string, to: string, payload: object) {
-    await this.prisma.notification.create({ data: { channel: "email", to, template, payload: JSON.stringify(payload), status: "LOGGED" } });
+  private async note(template: EmailTemplate, to: string, payload: Record<string, unknown> = {}) {
+    // Non-blocking for checkout: queue when Redis/BullMQ available; otherwise log/send inline.
+    void this.jobs.enqueueEmail(template, to, payload, `${template}:${to}:${String(payload.number || payload.path || Date.now())}`).catch(() => undefined);
   }
 
   private async rules() {
@@ -169,7 +182,16 @@ export class ShopService {
     const page = Math.max(1, Number(query.page) || 1);
     const pageSize = Math.min(60, Math.max(1, Number(query.pageSize) || 24));
     const q = query.q?.trim();
+    if (q) await this.limit("search", q.slice(0, 40));
     const cacheKey = `products:${page}:${pageSize}:${query.category || ""}:${q || ""}`;
+    const redisCached = await this.redis.get(`catalog:${cacheKey}`);
+    if (redisCached) {
+      try {
+        return JSON.parse(redisCached) as { products: unknown[]; total: number; page: number; pageSize: number };
+      } catch {
+        /* fall through */
+      }
+    }
     const cached = catalogCache.get(cacheKey);
     if (cached && cached.expires > Date.now()) return cached.value;
 

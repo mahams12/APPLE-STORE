@@ -1,6 +1,7 @@
 /**
  * Payment provider abstraction for I.STORE.
- * The hosted stub is the current development provider — not a live card processor.
+ * Real card processing requires a configured provider (e.g. Stripe).
+ * The hosted stub is development-only and must not process real cards in production.
  */
 
 export type CreatePaymentInput = {
@@ -10,50 +11,23 @@ export type CreatePaymentInput = {
   currency: string;
   customerEmail: string;
   returnUrl: string;
+  /** One-time confirmation token (hosted stub). Never guessable by payment id alone. */
+  confirmToken?: string;
 };
 
 export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
 
+export type WebhookResult = {
+  paymentId: string;
+  status: PaymentStatus;
+  eventId: string;
+} | null;
+
 export interface PaymentProvider {
   readonly name: string;
-  createPayment(input: CreatePaymentInput): Promise<{ redirectUrl: string | null }>;
+  createPayment(input: CreatePaymentInput): Promise<{ redirectUrl: string | null; externalId?: string }>;
   verifyPayment(paymentId: string): Promise<PaymentStatus>;
-  handleWebhook(rawBody: string, signature: string | undefined): Promise<{ paymentId: string; status: PaymentStatus } | null>;
-  refundPayment(paymentId: string, amount?: number): Promise<{ ok: boolean }>;
+  handleWebhook(rawBody: string, signature: string | undefined): Promise<WebhookResult>;
   getPaymentStatus(paymentId: string): Promise<PaymentStatus>;
-}
-
-/** Development / staging stand-in. Does not process real cards. */
-export class HostedStubProvider implements PaymentProvider {
-  readonly name = "hosted-stub";
-
-  async createPayment(input: CreatePaymentInput) {
-    return { redirectUrl: `/backend/payments/hosted/${input.paymentId}` };
-  }
-
-  async verifyPayment(): Promise<PaymentStatus> {
-    return "PENDING";
-  }
-
-  async handleWebhook(): Promise<{ paymentId: string; status: PaymentStatus } | null> {
-    return null;
-  }
-
-  async refundPayment() {
-    return { ok: false };
-  }
-
-  async getPaymentStatus(): Promise<PaymentStatus> {
-    return "PENDING";
-  }
-}
-
-let provider: PaymentProvider = new HostedStubProvider();
-
-export function getPaymentProvider() {
-  return provider;
-}
-
-export function setPaymentProvider(next: PaymentProvider) {
-  provider = next;
+  refundPayment(paymentId: string, amount?: number): Promise<{ ok: boolean }>;
 }

@@ -271,16 +271,19 @@ model OrderItem {
 }
 
 model Payment {
-  id             String               @id @default(cuid())
-  orderId        String               @unique
-  order          Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  provider       String
-  status         String
-  amount         Decimal              @db.Decimal(10, 2)
-  idempotencyKey String?              @unique
-  transactions   PaymentTransaction[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  id                   String               @id @default(cuid())
+  orderId              String               @unique
+  order                Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider             String
+  status               String
+  amount               Decimal              @db.Decimal(10, 2)
+  idempotencyKey       String?              @unique
+  confirmTokenHash     String?
+  confirmTokenExpires  DateTime?
+  confirmTokenUsedAt   DateTime?
+  transactions         PaymentTransaction[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
 }
 
 model PaymentTransaction {
