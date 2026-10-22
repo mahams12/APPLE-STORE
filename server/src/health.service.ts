@@ -1,10 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { PrismaService } from "../prisma.service";
-import { RedisService } from "../redis/redis.service";
-import { StorageService } from "../storage/storage.service";
-import { PaymentService } from "../payments/payment.service";
-import { EmailService } from "../email/email.service";
-import { loadConfig } from "../config";
+import { PrismaService } from "./prisma.service";
+import { RedisService } from "./redis/redis.service";
+import { StorageService } from "./storage/storage.service";
+import { PaymentService } from "./payments/payment.service";
+import { EmailService } from "./email/email.service";
+import { loadConfig } from "./config";
 
 @Injectable()
 export class HealthService {

@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-brand-50: #fbf8ee;
+  --color-brand-100: #f5edcf;
+  --color-brand-200: #eadfa6;
+  --color-brand-300: #ddc875;
+  --color-brand-400: #cfaf4a;
+  --color-brand-500: #c9a227;
+  --color-brand-600: #ad8a1f;
+  --color-brand-700: #8d7018;
+  --color-brand-800: #6f5813;
+  --color-brand-900: #4f3e0d;
+  --color-ink: #171512;
+  --color-muted: #6e6a60;
+  --color-line: #e8e4d8;
+  --color-canvas: #f7f5f0;
+  --color-star: #f5a524;
+  --color-success: #12b76a;
+  --color-danger: #f04438;
+  --color-violet: #7a6420;
+  --color-navy: #101010;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-marquee: marquee 40s linear infinite;
+
+  @keyframes shimmer {
+    0% { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+@layer base {
+  html { -webkit-tap-highlight-color: transparent; }
+  html.lenis, html.lenis body { height: auto; }
+  .lenis.lenis-smooth { scroll-behavior: auto !important; }
+  .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { @apply bg-brand-500 text-white; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-brand-500; }
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+}
+
+@layer components {
+  .btn {
+    @apply relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-lg px-5 text-sm font-semibold whitespace-nowrap transition-[transform,box-shadow,background-color,color] duration-300 ease-out-expo select-none active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply text-brand-200 shadow-[0_8px_24px_-10px_rgba(16,16,16,0.9)] hover:shadow-[0_14px_30px_-10px_rgba(16,16,16,0.95)];
+    background-image: linear-gradient(180deg, #2b2b2b 0%, #0c0c0c 100%);
+  }
+  .btn-primary::after {
+    content: "";
+    @apply pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700;
+  }
+  .btn-primary:hover::after { @apply translate-x-full; }
+  .btn-ghost { @apply bg-canvas text-ink hover:bg-line; }
+  .btn-outline { @apply border border-line bg-white text-ink hover:border-brand-300 hover:text-brand-600; }
+  .card { @apply rounded-2xl bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]; }
+  .input {
+    @apply h-11 w-full rounded-lg border border-line bg-white px-3.5 text-sm text-ink placeholder:text-muted/70 transition-[border-color,box-shadow] duration-200 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100;
+  }
+  .label { @apply mb-1.5 block text-xs font-medium text-muted; }
+  .chip { @apply inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium; }
+  .skeleton {
+    @apply rounded-lg bg-line/70;
+    background-image: linear-gradient(90deg, transparent 0, rgba(255, 255, 255, 0.7) 50%, transparent 100%);
+    background-size: 400px 100%;
+    background-repeat: no-repeat;
+    animation: var(--animate-shimmer);
+  }
+  .container-x { @apply mx-auto w-full max-w-[1320px] px-4 sm:px-6 lg:px-8; }
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(90deg, #8d7018, #e0bc55 50%, #8d7018);
+    background-size: 200% auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
