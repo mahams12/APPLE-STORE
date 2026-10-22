@@ -2,25 +2,25 @@
 
 @theme {
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --color-brand-50: #eef1ff;
-  --color-brand-100: #dfe5ff;
-  --color-brand-200: #c3ceff;
-  --color-brand-300: #9aabff;
-  --color-brand-400: #6f84ff;
-  --color-brand-500: #4361ee;
-  --color-brand-600: #3651e0;
-  --color-brand-700: #2a3fc0;
-  --color-brand-800: #1f2f96;
-  --color-brand-900: #16226b;
-  --color-ink: #1d1d1f;
-  --color-muted: #6e6e73;
-  --color-line: #e8e8ed;
-  --color-canvas: #f4f5f7;
+  --color-brand-50: #fbf8ee;
+  --color-brand-100: #f5edcf;
+  --color-brand-200: #eadfa6;
+  --color-brand-300: #ddc875;
+  --color-brand-400: #cfaf4a;
+  --color-brand-500: #c9a227;
+  --color-brand-600: #ad8a1f;
+  --color-brand-700: #8d7018;
+  --color-brand-800: #6f5813;
+  --color-brand-900: #4f3e0d;
+  --color-ink: #171512;
+  --color-muted: #6e6a60;
+  --color-line: #e8e4d8;
+  --color-canvas: #f7f5f0;
   --color-star: #f5a524;
   --color-success: #12b76a;
   --color-danger: #f04438;
-  --color-violet: #a83bf5;
-  --color-navy: #0b2052;
+  --color-violet: #7a6420;
+  --color-navy: #101010;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --animate-shimmer: shimmer 1.6s linear infinite;
   --animate-float: float 6s ease-in-out infinite;
@@ -59,8 +59,8 @@
     @apply relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-lg px-5 text-sm font-semibold whitespace-nowrap transition-[transform,box-shadow,background-color,color] duration-300 ease-out-expo select-none active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-primary {
-    @apply text-white shadow-[0_8px_24px_-10px_rgba(67,97,238,0.8)] hover:shadow-[0_14px_30px_-10px_rgba(67,97,238,0.9)];
-    background-image: linear-gradient(180deg, #4f6dff 0%, #2a3fc0 100%);
+    @apply text-brand-200 shadow-[0_8px_24px_-10px_rgba(16,16,16,0.9)] hover:shadow-[0_14px_30px_-10px_rgba(16,16,16,0.95)];
+    background-image: linear-gradient(180deg, #2b2b2b 0%, #0c0c0c 100%);
   }
   .btn-primary::after {
     content: "";
@@ -87,7 +87,7 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #4361ee, #a83bf5 60%, #4361ee);
+    background-image: linear-gradient(90deg, #8d7018, #e0bc55 50%, #8d7018);
     background-size: 200% auto;
   }
 }

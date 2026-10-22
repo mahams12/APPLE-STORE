@@ -36,12 +36,12 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
         return (
           <div key={item.href}>
             <div className="relative flex items-center">
-              {active && <m.span layoutId="admin-nav" className="absolute inset-0 rounded-xl bg-brand-500 shadow-[0_10px_24px_-10px_rgba(67,97,238,0.8)]" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
-              <Link href={item.href} onClick={() => { if (item.children) setOpenKey(item.href); onNavigate?.(); }} className={cn("relative flex flex-1 items-center gap-3 rounded-xl px-3.5 py-3 text-sm transition-colors", active ? "text-white" : "text-muted hover:text-ink")}>
+              {active && <m.span layoutId="admin-nav" className="absolute inset-0 rounded-xl bg-brand-500 shadow-[0_10px_24px_-10px_rgba(201,162,39,0.55)]" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
+              <Link href={item.href} onClick={() => { if (item.children) setOpenKey(item.href); onNavigate?.(); }} className={cn("relative flex flex-1 items-center gap-3 rounded-xl px-3.5 py-3 text-sm transition-colors", active ? "text-white" : "text-white/60 hover:text-white")}>
                 <Icon size={18} /> {item.label}
               </Link>
               {item.children && (
-                <button onClick={() => setOpenKey(expanded ? null : item.href)} className={cn("relative mr-2 p-1", active ? "text-white" : "text-muted")} aria-label={`Toggle ${item.label}`}>
+                <button onClick={() => setOpenKey(expanded ? null : item.href)} className={cn("relative mr-2 p-1", active ? "text-white" : "text-white/60")} aria-label={`Toggle ${item.label}`}>
                   <ChevronDown size={15} className={cn("transition-transform duration-300", expanded && "rotate-180")} />
                 </button>
               )}
@@ -49,9 +49,9 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
             <AnimatePresence initial={false}>
               {item.children && expanded && (
                 <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                  <div className="ml-6 space-y-0.5 border-l border-line py-1 pl-4">
+                  <div className="ml-6 space-y-0.5 border-l border-white/10 py-1 pl-4">
                     {item.children.map((c) => (
-                      <Link key={c.href} href={c.href} onClick={onNavigate} className="block rounded-lg px-3 py-2 text-sm text-muted transition-colors hover:bg-canvas hover:text-ink">{c.label}</Link>
+                      <Link key={c.href} href={c.href} onClick={onNavigate} className="block rounded-lg px-3 py-2 text-sm text-white/60 transition-colors hover:bg-white/10 hover:text-white">{c.label}</Link>
                     ))}
                   </div>
                 </m.div>
@@ -67,23 +67,23 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 export function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const { admin, logout } = useSession();
   const footer = (
-    <div className="mt-auto space-y-3 border-t border-line pt-4">
+    <div className="mt-auto space-y-3 border-t border-white/10 pt-4">
       {admin ? (
         <div className="flex items-center gap-3">
           <span className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-brand-400 to-violet text-sm font-semibold text-white">{admin.firstName[0]}{admin.lastName[0]}</span>
-          <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{admin.firstName} {admin.lastName}</p><p className="flex items-center gap-1 text-xs text-muted"><ShieldCheck size={12} /> {admin.role.name}</p></div>
-          <button onClick={() => logout("admin")} className="p-2 text-muted hover:text-danger" aria-label="Sign out"><LogOut size={16} /></button>
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">{admin.firstName} {admin.lastName}</p><p className="flex items-center gap-1 text-xs text-white/50"><ShieldCheck size={12} /> {admin.role.name}</p></div>
+          <button onClick={() => logout("admin")} className="p-2 text-white/60 hover:text-danger" aria-label="Sign out"><LogOut size={16} /></button>
         </div>
       ) : (
         <Link href="/admin/login" className="btn btn-primary w-full">Admin sign in</Link>
       )}
-      <Link href="/" className="block text-center text-xs text-muted hover:text-brand-500">← Back to store</Link>
+      <Link href="/" className="block text-center text-xs text-white/60 hover:text-brand-300">← Back to store</Link>
     </div>
   );
   return (
     <>
-      <aside className="sticky top-0 hidden h-dvh w-72 shrink-0 flex-col border-r border-line bg-white p-5 lg:flex">
-        <Logo href="/admin" className="mb-8 px-2" />
+      <aside className="sticky top-0 hidden h-dvh w-72 shrink-0 flex-col border-r border-white/10 bg-ink p-5 lg:flex">
+        <Logo href="/admin" light className="mb-8 px-2" />
         <div data-lenis-prevent className="no-scrollbar -mx-1 flex-1 overflow-y-auto px-1"><NavList /></div>
         {footer}
       </aside>
@@ -91,8 +91,8 @@ export function AdminSidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onC
         {mobileOpen && (
           <>
             <m.div className="fixed inset-0 z-[60] bg-ink/30 lg:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
-            <m.aside data-lenis-prevent className="fixed inset-y-0 left-0 z-[61] flex w-[86%] max-w-xs flex-col overflow-y-auto bg-white p-5 lg:hidden" initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}>
-              <div className="mb-6 flex items-center justify-between"><Logo href="/admin" /><button onClick={onClose} className="grid size-9 place-items-center rounded-full bg-canvas" aria-label="Close menu"><X size={16} /></button></div>
+            <m.aside data-lenis-prevent className="fixed inset-y-0 left-0 z-[61] flex w-[86%] max-w-xs flex-col overflow-y-auto bg-ink p-5 lg:hidden" initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}>
+              <div className="mb-6 flex items-center justify-between"><Logo href="/admin" light /><button onClick={onClose} className="grid size-9 place-items-center rounded-full bg-white/10 text-white" aria-label="Close menu"><X size={16} /></button></div>
               <NavList onNavigate={onClose} />
               {footer}
             </m.aside>

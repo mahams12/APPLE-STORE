@@ -18,7 +18,7 @@ export function ProductCard({ product, layout = "grid", priority = false }: { pr
       layout
       whileHover={{ y: -6 }}
       transition={{ type: "spring", stiffness: 300, damping: 24 }}
-      className={`group card relative flex overflow-hidden p-3 transition-shadow duration-500 hover:shadow-[0_24px_50px_-24px_rgba(67,97,238,0.45)] ${list ? "flex-row gap-5" : "flex-col"}`}
+      className={`group card relative flex overflow-hidden p-3 transition-shadow duration-500 hover:shadow-[0_24px_50px_-24px_rgba(23,21,18,0.25)] ${list ? "flex-row gap-5" : "flex-col"}`}
     >
       <Link href={`/product/${product.slug}`} className={`relative block shrink-0 overflow-hidden rounded-xl bg-canvas ${list ? "aspect-square w-40 sm:w-56" : "aspect-[4/3] w-full"}`}>
         <Image
