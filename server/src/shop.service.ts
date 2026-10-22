@@ -257,10 +257,15 @@ export class ShopService {
     return this.presentCart(cart);
   }
 
-  async addItem(actor: Actor, res: Response, body: { productId: string; color: string; storage: string; extra: string; qty?: number }) {
+  async addItem(actor: Actor, res: Response, body: { productId: string; slug?: string; color: string; storage: string; extra: string; qty?: number }) {
     const qty = Math.max(1, Math.min(10, Number(body.qty) || 1));
     const variant = await this.prisma.productVariant.findFirst({
-      where: { productId: body.productId, color: body.color, storage: body.storage, extra: body.extra, product: { published: true } },
+      where: {
+        color: body.color,
+        storage: body.storage,
+        extra: body.extra,
+        product: { published: true, OR: body.slug ? [{ id: body.productId }, { slug: body.slug }] : [{ id: body.productId }] },
+      },
     });
     if (!variant) throw new BadRequestException("That configuration is not available.");
     if (variant.stock - variant.reserved < qty) throw new BadRequestException("That configuration does not have enough stock.");
@@ -452,7 +457,7 @@ export class ShopService {
       <style>body{font-family:sans-serif;background:#f4f6fa;display:grid;place-items:center;min-height:100vh;margin:0}main{background:#fff;padding:32px;border-radius:16px;max-width:420px}button{background:#3b5bfe;color:#fff;border:0;border-radius:10px;height:44px;padding:0 16px;font-weight:700}</style></head>
       <body><main><p>I.STORE</p><h1>Card payment</h1><p>Order ${payment.order.number} · $${Number(payment.amount).toFixed(2)}</p>
       <p>This page stands in for the payment provider. The store does not mark the order paid by itself.</p>
-      <form method="post" action="confirm"><button>Confirm payment</button></form>
+      <form method="post" action="${payment.id}/confirm"><button>Confirm payment</button></form>
       <p><a href="${app}/orders/${payment.orderId}">Return without paying</a></p></main></body></html>`;
   }
 

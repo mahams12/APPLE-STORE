@@ -90,7 +90,7 @@ export class PaymentService {
       <style>body{font-family:sans-serif;background:#f4f6fa;display:grid;place-items:center;min-height:100vh;margin:0}main{background:#fff;padding:32px;border-radius:16px;max-width:420px}button{background:#111;color:#fff;border:0;border-radius:10px;height:44px;padding:0 16px;font-weight:700;cursor:pointer}</style></head>
       <body><main><p>I.STORE</p><h1>Card payment</h1><p>Order ${payment.order.number} · $${Number(payment.amount).toFixed(2)}</p>
       <p>Development payment page. Confirmation uses a one-time signed token — payment id alone cannot mark this paid.</p>
-      <form method="post" action="confirm"><input type="hidden" name="token" value="${token}" /><button type="submit">Confirm payment</button></form>
+      <form method="post" action="${payment.id}/confirm"><input type="hidden" name="token" value="${token}" /><button type="submit">Confirm payment</button></form>
       <p><a href="${app}/orders/${payment.orderId}">Return without paying</a></p></main></body></html>`;
   }
 

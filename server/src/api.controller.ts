@@ -88,7 +88,7 @@ export class ApiController {
   }
 
   @Post("cart/items")
-  async addItem(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body() body: { productId: string; color: string; storage: string; extra: string; qty?: number }) {
+  async addItem(@Req() req: Request, @Res({ passthrough: true }) res: Response, @Body() body: { productId: string; slug?: string; color: string; storage: string; extra: string; qty?: number }) {
     return this.shop.addItem(await this.actor(req), res, body);
   }
 

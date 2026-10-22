@@ -102,7 +102,7 @@ export const useCart = create<CartState>((set, get) => {
     },
     add: (product, sel) =>
       run(
-        () => api<Cart>("/cart/items", { method: "POST", json: { productId: product.id, color: sel.color, storage: sel.storage, extra: sel.extra, qty: sel.qty } }),
+        () => api<Cart>("/cart/items", { method: "POST", json: { productId: product.id, slug: product.slug, color: sel.color, storage: sel.storage, extra: sel.extra, qty: sel.qty } }),
         () => {
           const { cart } = get();
           const storageIndex = Math.max(0, product.storages.indexOf(sel.storage));

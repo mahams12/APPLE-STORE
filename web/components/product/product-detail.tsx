@@ -48,6 +48,7 @@ export function ProductDetail({ product }: { product: Product }) {
     try {
       await add(product, { color, storage, extra, qty });
       setAdded(true);
+      setOpen(true);
       setTimeout(() => setAdded(false), 1800);
       toast.success(`${product.name} added to cart`, { action: { label: "View cart", onClick: () => setOpen(true) } });
     } catch (e) {
