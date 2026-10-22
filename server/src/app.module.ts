@@ -6,8 +6,6 @@ import { RedisService } from "./redis/redis.service";
 import { RateLimitService } from "./redis/rate-limit";
 import { StorageService } from "./storage/storage.service";
 import { PaymentModule } from "./payments/payment.module";
-import { PaymentService } from "./payments/payment.service";
-import { WebhookService } from "./payments/webhook.service";
 import { EmailService } from "./email/email.service";
 import { JobsService } from "./jobs/jobs.service";
 import { HealthService } from "./health.service";
@@ -25,6 +23,6 @@ import { HealthService } from "./health.service";
     JobsService,
     HealthService,
   ],
-  exports: [RedisService, PaymentService, WebhookService],
+  exports: [RedisService, PaymentModule],
 })
 export class AppModule {}

@@ -409,7 +409,7 @@ export class ShopService {
     await this.note("order-received", order.email, { number: order.number });
     let paymentUrl: string | null = null;
     if (order.payment?.provider === "card" && order.payment.id) {
-      const created = await getPaymentProvider().createPayment({
+      const created = await this.payments.createHostedPayment({
         orderId: order.id,
         paymentId: order.payment.id,
         amount: Number(order.total),
