@@ -13,8 +13,8 @@ import { money } from "@/lib/format";
 import { useAdminData } from "@/lib/use-admin";
 import type { Product } from "@/lib/types";
 
-type Form = { id?: string; name: string; category: string; brand: string; sku: string; description: string; price: number; salePrice: number; stock: number; image: string; storages: string; extras: string; extraLabel: string; popular: boolean };
-const toForm = (p?: Product): Form => ({ id: p?.id, name: p?.name ?? "", category: p?.category ?? CATEGORIES[0], brand: p?.brand ?? "Apple", sku: p?.sku ?? "", description: p?.description ?? "", price: p?.price ?? 0, salePrice: p?.salePrice ?? 0, stock: p?.stock ?? 0, image: p?.image ?? "", storages: p?.storages.join(", ") ?? "128GB", extras: p?.extras.join(", ") ?? "Standard", extraLabel: p?.extraLabel ?? "Finish", popular: p?.popular ?? false });
+type Form = { id?: string; name: string; category: string; brand: string; sku: string; description: string; price: number; salePrice: number; stock: number; image: string; colors: { name: string; hex: string }[]; storages: string; extras: string; extraLabel: string; popular: boolean };
+const toForm = (p?: Product): Form => ({ id: p?.id, name: p?.name ?? "", category: p?.category ?? CATEGORIES[0], brand: p?.brand ?? "Apple", sku: p?.sku ?? "", description: p?.description ?? "", price: p?.price ?? 0, salePrice: p?.salePrice ?? 0, stock: p?.stock ?? 0, image: p?.image ?? "", colors: p?.colors?.length ? p.colors.map((c) => ({ name: c.name, hex: c.hex })) : [{ name: "Black", hex: "#1C1C1E" }], storages: p?.storages.join(", ") ?? "128GB", extras: p?.extras.join(", ") ?? "Standard", extraLabel: p?.extraLabel ?? "Finish", popular: p?.popular ?? false });
 
 export default function ProductsAdmin() {
   const { data, setData, live, reload } = useAdminData<Product[]>("/products?pageSize=100", (r) => (Array.isArray(r) ? r : (r as { items?: Product[]; products?: Product[] }).items ?? (r as { products: Product[] }).products ?? []) as Product[], PRODUCTS);
@@ -40,7 +40,7 @@ export default function ProductsAdmin() {
     if (!edit) return;
     setBusy(true);
     try {
-      const payload = { ...edit, price: Number(edit.price), salePrice: Number(edit.salePrice), stock: Number(edit.stock), storages: split(edit.storages), extras: split(edit.extras), image: edit.image || undefined, gallery: edit.image ? [edit.image] : undefined };
+      const payload = { ...edit, price: Number(edit.price), salePrice: Number(edit.salePrice), stock: Number(edit.stock), colors: edit.colors.filter((c) => c.name.trim()).map((c) => ({ name: c.name.trim(), hex: c.hex })), storages: split(edit.storages), extras: split(edit.extras), image: edit.image || undefined, gallery: edit.image ? [edit.image] : undefined };
       if (live) {
         await api("/admin/products", { method: "POST", json: payload });
         await reload();
@@ -103,6 +103,19 @@ export default function ProductsAdmin() {
                 {field("brand", "Brand")}{field("sku", "SKU")}{field("stock", "Stock", "number")}{field("price", "RR price", "number")}{field("salePrice", "Wholesale price", "number")}
                 {field("storages", "Storage / sizes (comma separated)", "text", true)}{field("extraLabel", "Option label")}{field("extras", "Options (comma separated)")}
                 <label className="sm:col-span-2"><span className="label">Description</span><textarea className="input min-h-24 py-3" value={edit.description} onChange={(e) => setEdit({ ...edit, description: e.target.value })} /></label>
+                <div className="sm:col-span-2">
+                  <span className="label">Colors</span>
+                  <div className="space-y-2">
+                    {edit.colors.map((c, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <input type="color" value={c.hex} onChange={(e) => setEdit({ ...edit, colors: edit.colors.map((x, j) => (j === i ? { ...x, hex: e.target.value } : x)) })} className="size-10 shrink-0 cursor-pointer rounded-full border border-line bg-transparent p-0.5" aria-label="Color shade" />
+                        <input className="input flex-1" placeholder="Color name (e.g. Midnight)" value={c.name} onChange={(e) => setEdit({ ...edit, colors: edit.colors.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} />
+                        <button type="button" onClick={() => setEdit({ ...edit, colors: edit.colors.filter((_, j) => j !== i) })} disabled={edit.colors.length <= 1} className="grid size-9 place-items-center rounded-full text-muted transition hover:bg-canvas hover:text-red-500 disabled:opacity-30" aria-label="Remove color"><Trash2 size={16} /></button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => setEdit({ ...edit, colors: [...edit.colors, { name: "", hex: "#C9A24B" }] })} className="btn btn-ghost h-9 text-sm"><Plus size={15} /> Add color</button>
+                  </div>
+                </div>
                 <div className="flex items-center justify-between rounded-xl bg-canvas p-4 sm:col-span-2"><span className="text-sm font-medium">Featured / popular</span><Toggle checked={edit.popular} onChange={(v) => setEdit({ ...edit, popular: v })} label="Popular" /></div>
               </div>
               <div className="flex gap-3 border-t border-line p-6"><button type="button" onClick={() => setEdit(null)} className="btn btn-outline flex-1">Cancel</button><button disabled={busy} className="btn btn-primary flex-1">{busy ? "Saving…" : "Save product"}</button></div>

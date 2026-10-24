@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "sonner";
-import { AuthCard, Field } from "@/components/auth/auth-card";
+import { AuthCard, PasswordField } from "@/components/auth/auth-card";
 import { api, errorMessage } from "@/lib/client";
 
 function Reset() {
@@ -29,7 +29,7 @@ function Reset() {
     <AuthCard title="Choose a new password" footer={<Link href="/account/login" className="text-brand-500 hover:underline">Back to sign in</Link>}>
       {!token ? <p className="text-sm text-danger">This reset link is missing its token. Request a new one.</p> : (
         <form onSubmit={submit} className="space-y-4">
-          <Field label="New password" type="password" minLength={8} required autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <PasswordField label="New password" minLength={8} required autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
           <button disabled={busy} className="btn btn-primary h-12 w-full">{busy ? "Saving…" : "Update password"}</button>
         </form>
       )}
