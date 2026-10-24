@@ -615,6 +615,7 @@ export class ShopService {
     }
     await this.audit(admin.id, body.id ? "product.update" : "product.create", "Product", product.id, "", product.name);
     invalidateCatalogCache();
+    await this.redis.delPattern("catalog:*");
     const saved = await this.prisma.product.findUniqueOrThrow({ where: { id: product.id }, include: productInclude });
     return presentProduct(saved);
   }
@@ -624,6 +625,7 @@ export class ShopService {
     await this.prisma.product.update({ where: { id }, data: { published: false } });
     await this.audit(admin.id, "product.archive", "Product", id, "published", "archived");
     invalidateCatalogCache();
+    await this.redis.delPattern("catalog:*");
     return { ok: true };
   }
 

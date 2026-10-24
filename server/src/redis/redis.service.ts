@@ -94,6 +94,22 @@ export class RedisService implements OnModuleDestroy {
     this.memory.delete(key);
   }
 
+  async delPattern(pattern: string) {
+    const redis = this.getClient();
+    if (redis) {
+      try {
+        for await (const keys of redis.scanStream({ match: pattern, count: 100 })) {
+          const batch = keys as string[];
+          if (batch.length) await redis.del(...batch);
+        }
+      } catch {
+        this.ready = false;
+      }
+    }
+    const prefix = pattern.replace(/\*$/, "");
+    for (const key of this.memory.keys()) if (key.startsWith(prefix)) this.memory.delete(key);
+  }
+
   async incr(key: string, ttlSeconds: number): Promise<number> {
     const redis = this.getClient();
     if (redis) {
