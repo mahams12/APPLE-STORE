@@ -44,8 +44,13 @@ export class ApiController {
   }
 
   @Post("auth/admin/login")
-  loginAdmin(@Res({ passthrough: true }) res: Response, @Body() body: { email: string; password: string }) {
-    return this.shop.loginAdmin(body, res);
+  loginAdmin(@Body() body: { email: string; password: string }) {
+    return this.shop.loginAdmin(body);
+  }
+
+  @Post("auth/admin/login/verify")
+  verifyAdminLogin(@Res({ passthrough: true }) res: Response, @Body() body: { email: string; code: string }) {
+    return this.shop.verifyAdminLogin(body, res);
   }
 
   @Post("auth/admin/logout")

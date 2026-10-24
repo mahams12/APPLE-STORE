@@ -122,12 +122,26 @@ export class ShopService {
     return { ok: true };
   }
 
-  async loginAdmin(body: { email: string; password: string }, res: Response) {
+  async loginAdmin(body: { email: string; password: string }) {
     await this.limit("admin-auth", body.email);
     const admin = await this.prisma.adminUser.findUnique({ where: { email: body.email.trim().toLowerCase() }, include: { role: true } });
     if (!admin || admin.status !== "Active" || admin.role.disabled || !(await bcrypt.compare(body.password, admin.passwordHash))) {
       throw new UnauthorizedException("Admin email or password is incorrect.");
     }
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    await this.redis.set(`admin-otp:${admin.id}`, hashToken(code), 300);
+    await this.note("admin-notification", admin.email, { code });
+    return { ok: true, requiresVerification: true, devCode: process.env.NODE_ENV === "production" ? undefined : code };
+  }
+
+  async verifyAdminLogin(body: { email: string; code: string }, res: Response) {
+    await this.limit("admin-auth-verify", body.email);
+    const admin = await this.prisma.adminUser.findUnique({ where: { email: body.email.trim().toLowerCase() }, include: { role: true } });
+    const expected = admin ? await this.redis.get(`admin-otp:${admin.id}`) : null;
+    if (!admin || !expected || expected !== hashToken((body.code || "").trim())) {
+      throw new UnauthorizedException("That sign-in code is incorrect or expired.");
+    }
+    await this.redis.del(`admin-otp:${admin.id}`);
     await this.openSession("admin", admin.id, res);
     return { ok: true, role: admin.role.name };
   }

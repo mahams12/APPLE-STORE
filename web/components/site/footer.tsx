@@ -4,7 +4,7 @@ import { Logo } from "./logo";
 const COLS = [
   { title: "Customer Care", links: [["Contact Us", "/services#contact"], ["Shipping & Handling", "/services#shipping"], ["Returns Policy", "/services#returns"], ["Track Order", "/account"]] },
   { title: "Company", links: [["About Us", "/about"], ["Our Team", "/about#team"], ["Partners", "/about#partners"], ["Promotions", "/promotions"]] },
-  { title: "Resources", links: [["FAQ's", "/services#faq"], ["Accessibility", "/about"], ["Advanced Search", "/shop"], ["Business Portal", "/admin"]] },
+  { title: "Resources", links: [["FAQ's", "/services#faq"], ["Accessibility", "/about"], ["Advanced Search", "/shop"]] },
 ];
 
 export function Footer() {
