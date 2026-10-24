@@ -63,10 +63,13 @@ async function main() {
   const ownerId = roleIds.get("Owner");
   if (!ownerId) throw new Error("Owner role missing");
   const passwordHash = await bcrypt.hash("IstoreAdmin!2026", 10);
-  await prisma.adminUser.upsert({
-    where: { email: "admin@istore.example" },
+  const ADMIN_EMAIL = process.env.ADMIN_EMAILS?.split(",")[0]?.trim().toLowerCase() ?? "istoreadmin15@gmail.com";
+  const legacy = await prisma.adminUser.findUnique({ where: { email: "admin@istore.example" } });
+  if (legacy) await prisma.adminUser.update({ where: { id: legacy.id }, data: { email: ADMIN_EMAIL, passwordHash, roleId: ownerId, status: "Active" } });
+  else await prisma.adminUser.upsert({
+    where: { email: ADMIN_EMAIL },
     update: { passwordHash, roleId: ownerId, status: "Active" },
-    create: { email: "admin@istore.example", passwordHash, firstName: "I.STORE", lastName: "Admin", roleId: ownerId, status: "Active", creditLimit: 25000 },
+    create: { email: ADMIN_EMAIL, passwordHash, firstName: "I.STORE", lastName: "Admin", roleId: ownerId, status: "Active", creditLimit: 25000 },
   });
   const customerHash = await bcrypt.hash("Customer!2026", 10);
   await prisma.user.upsert({
