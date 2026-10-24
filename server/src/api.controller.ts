@@ -224,21 +224,6 @@ export class ApiController {
     return this.shop.subscribe(body.email || "");
   }
 
-  @Post("quotes")
-  quote(@Body() body: { name: string; email: string; amount: number; note: string }) {
-    return this.shop.quote(body);
-  }
-
-  @Get("admin/quotes")
-  async quotes(@Req() req: Request) {
-    return this.shop.quotes(await this.actor(req));
-  }
-
-  @Patch("admin/quotes/:id")
-  async setQuote(@Req() req: Request, @Param("id") id: string, @Body() body: { status: string }) {
-    return this.shop.setQuote(await this.actor(req), id, body.status);
-  }
-
   @Get("admin/audits")
   async audits(@Req() req: Request) {
     return this.shop.audits(await this.actor(req));
@@ -274,6 +259,11 @@ export class ApiController {
     await this.shop.requireAdmin(await this.actor(req));
     if (!file) throw new BadRequestException("Choose an image to upload.");
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)) throw new BadRequestException("Use a JPEG, PNG, or WebP image.");
+    const b = file.buffer;
+    const isJpeg = b.length > 2 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff;
+    const isPng = b.length > 8 && b.readUInt32BE(0) === 0x89504e47 && b.readUInt32BE(4) === 0x0d0a1a0a;
+    const isWebp = b.length > 12 && b.toString("ascii", 0, 4) === "RIFF" && b.toString("ascii", 8, 12) === "WEBP";
+    if (!isJpeg && !isPng && !isWebp) throw new BadRequestException("That file is not a real image.");
     const ext = file.mimetype === "image/png" ? "png" : file.mimetype === "image/webp" ? "webp" : "jpg";
     const dir = path.join(process.cwd(), "../web/public/uploads");
     mkdirSync(dir, { recursive: true });

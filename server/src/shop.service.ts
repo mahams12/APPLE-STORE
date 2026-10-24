@@ -525,6 +525,7 @@ export class ShopService {
     if (status && !allowed.includes(status)) throw new BadRequestException("Unknown order status.");
     if (status === "CANCELLED" && !["CANCELLED", "REFUNDED"].includes(before.status)) await this.restoreStock(before.id, before.status);
     if (status === "REFUNDED" && before.status !== "REFUNDED") await this.restoreStock(before.id, before.status);
+    if (status && !["CANCELLED", "REFUNDED"].includes(status) && ["CANCELLED", "REFUNDED"].includes(before.status)) await this.reapplyStock(before.id, status);
     const order = await this.prisma.order.update({
       where: { id },
       data: {
@@ -547,6 +548,22 @@ export class ShopService {
       } else {
         await this.prisma.productVariant.update({ where: { id: item.variantId }, data: { stock: { increment: item.qty } } });
         await this.prisma.inventoryTransaction.create({ data: { variantId: item.variantId, delta: item.qty, reason: "RETURN", orderId } });
+      }
+    }
+  }
+
+  private async reapplyStock(orderId: string, status: string) {
+    const items = await this.prisma.orderItem.findMany({ where: { orderId } });
+    for (const item of items) {
+      const variant = await this.prisma.productVariant.findUniqueOrThrow({ where: { id: item.variantId } });
+      if (status === "PENDING") {
+        if (variant.stock - variant.reserved < item.qty) throw new BadRequestException(`Not enough stock to restore order for ${variant.sku}.`);
+        await this.prisma.productVariant.update({ where: { id: item.variantId }, data: { reserved: { increment: item.qty } } });
+        await this.prisma.inventoryTransaction.create({ data: { variantId: item.variantId, delta: 0, reason: "RESERVE", orderId, note: "Reservation re-applied" } });
+      } else {
+        if (variant.stock < item.qty) throw new BadRequestException(`Not enough stock to restore order for ${variant.sku}.`);
+        await this.prisma.productVariant.update({ where: { id: item.variantId }, data: { stock: { decrement: item.qty } } });
+        await this.prisma.inventoryTransaction.create({ data: { variantId: item.variantId, delta: -item.qty, reason: "RESTOCK_REVERT", orderId } });
       }
     }
   }
@@ -785,24 +802,6 @@ export class ShopService {
   async subscribe(email: string) {
     if (!email.includes("@")) throw new BadRequestException("Enter a valid email.");
     await this.prisma.newsletterSubscriber.upsert({ where: { email: email.toLowerCase() }, update: {}, create: { email: email.toLowerCase() } });
-    return { ok: true };
-  }
-
-  async quote(body: { name: string; email: string; amount: number; note: string }) {
-    const row = await this.prisma.quoteRequest.create({ data: { name: body.name, email: body.email, amount: Number(body.amount), note: body.note || "" } });
-    return { id: row.id, name: row.name, email: row.email, amount: Number(row.amount), note: row.note, date: row.createdAt.toISOString().slice(0, 10), status: row.status };
-  }
-
-  async quotes(actor: Actor) {
-    await this.requireAdmin(actor);
-    const rows = await this.prisma.quoteRequest.findMany({ orderBy: { createdAt: "desc" } });
-    return { quotes: rows.map((row) => ({ id: row.id, name: row.name, email: row.email, amount: Number(row.amount), note: row.note, date: row.createdAt.toISOString().slice(0, 10), status: row.status })) };
-  }
-
-  async setQuote(actor: Actor, id: string, status: string) {
-    const admin = await this.requireAdmin(actor);
-    const quote = await this.prisma.quoteRequest.update({ where: { id }, data: { status } });
-    await this.audit(admin.id, "quote.update", "QuoteRequest", id, "", quote.status);
     return { ok: true };
   }
 
