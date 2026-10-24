@@ -554,8 +554,12 @@ export class ShopService {
   async saveProduct(actor: Actor, body: ProductInput) {
     const admin = await this.requireAdmin(actor);
     if (!body.name || Number(body.salePrice) <= 0) throw new BadRequestException("Add a name and a sale price.");
+    const existing = body.id ? await this.prisma.product.findUnique({ where: { id: body.id }, include: { variants: true } }) : null;
     const category = await this.prisma.category.upsert({ where: { name: body.category || "Accessories" }, update: {}, create: { name: body.category || "Accessories", slug: slugify(body.category || "accessories") } });
-    const colors = body.colors?.length ? body.colors : [{ name: "Black", hex: "#1C1C1E" }];
+    const existingColors = existing?.variants?.length
+      ? [...new Map(existing.variants.filter((v) => v.color).map((v) => [v.color as string, { name: v.color as string, hex: v.colorHex ?? "#1C1C1E" }])).values()]
+      : [];
+    const colors = body.colors?.length ? body.colors : existingColors.length ? existingColors : [{ name: "Black", hex: "#1C1C1E" }];
     const storages = body.storages?.length ? body.storages : ["128GB"];
     const extras = body.extras?.length ? body.extras : ["Standard"];
     const slug = uniqueSlug(body.slug || slugify(body.name));
@@ -573,7 +577,6 @@ export class ShopService {
       published: body.published !== false,
       categoryId: category.id,
     };
-    const existing = body.id ? await this.prisma.product.findUnique({ where: { id: body.id } }) : null;
     const product = existing
       ? await this.prisma.product.update({ where: { id: existing.id }, data: { ...data, slug: existing.slug, sku: existing.sku } })
       : await this.prisma.product.create({ data });
@@ -582,19 +585,33 @@ export class ShopService {
     }
     const images = [body.image, ...(body.gallery || [])].filter(Boolean);
     await this.prisma.productImage.createMany({ data: (images.length ? images : ["/products/iphone.jpg"]).map((url, sort) => ({ productId: product.id, url: url as string, sort })) });
-    const combos = colors.flatMap((color) => storages.flatMap((storage, storageIndex) => extras.map((extra) => ({ color, storage, extra, storageIndex }))));
-    const each = Math.floor(Number(body.stock || 0) / combos.length);
-    let remainder = Number(body.stock || 0) - each * combos.length;
-    for (const combo of combos) {
-      const step = ["iPhone", "iPad", "Mac"].includes(body.category) ? 100 : body.category === "Watch" ? 50 : 0;
-      const price = Number(body.salePrice) + combo.storageIndex * step;
-      const stock = each + (remainder > 0 ? 1 : 0);
-      if (remainder > 0) remainder -= 1;
-      await this.prisma.productVariant.upsert({
-        where: { productId_color_storage_extra: { productId: product.id, color: combo.color.name, storage: combo.storage, extra: combo.extra } },
-        create: { productId: product.id, sku: `${product.sku}-${slugify(combo.color.name)}-${slugify(combo.storage)}-${slugify(combo.extra)}`, color: combo.color.name, colorHex: combo.color.hex, storage: combo.storage, extra: combo.extra, price, stock },
-        update: { price, stock, colorHex: combo.color.hex },
-      });
+    const combosProvided = Boolean(body.colors?.length || body.storages?.length || body.extras?.length);
+    const combos = combosProvided
+      ? colors.flatMap((color) => storages.flatMap((storage, storageIndex) => extras.map((extra) => ({ color, storage, extra, storageIndex }))))
+      : [];
+    if (!existing || combosProvided) {
+      const each = Math.floor(Number(body.stock || 0) / Math.max(1, combos.length));
+      let remainder = Number(body.stock || 0) - each * combos.length;
+      for (const combo of combos) {
+        const step = ["iPhone", "iPad", "Mac"].includes(body.category) ? 100 : body.category === "Watch" ? 50 : 0;
+        const price = Number(body.salePrice) + combo.storageIndex * step;
+        const stock = each + (remainder > 0 ? 1 : 0);
+        if (remainder > 0) remainder -= 1;
+        await this.prisma.productVariant.upsert({
+          where: { productId_color_storage_extra: { productId: product.id, color: combo.color.name, storage: combo.storage, extra: combo.extra } },
+          create: { productId: product.id, sku: `${product.sku}-${slugify(combo.color.name)}-${slugify(combo.storage)}-${slugify(combo.extra)}`, color: combo.color.name, colorHex: combo.color.hex, storage: combo.storage, extra: combo.extra, price, stock },
+          update: { price, stock, colorHex: combo.color.hex },
+        });
+      }
+    }
+    if (!existing || combosProvided) {
+      const keep = new Set(combos.map((c) => `${c.color.name}|${c.storage}|${c.extra}`));
+      const refreshed = await this.prisma.productVariant.findMany({ where: { productId: product.id } });
+      for (const v of refreshed) {
+        if (keep.has(`${v.color}|${v.storage}|${v.extra}`)) continue;
+        const used = await this.prisma.orderItem.count({ where: { variantId: v.id } });
+        if (!used) await this.prisma.productVariant.delete({ where: { id: v.id } });
+      }
     }
     await this.audit(admin.id, body.id ? "product.update" : "product.create", "Product", product.id, "", product.name);
     invalidateCatalogCache();
