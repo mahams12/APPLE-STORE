@@ -11,6 +11,11 @@ import { JobsService } from "./jobs/jobs.service";
 import type { EmailTemplate } from "./email/email.service";
 import { logInfo } from "./logger";
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "istoreadmin15@gmail.com")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
 type Actor = { userId?: string; adminId?: string; guest?: string; receipts: string[] };
 
 const PERMISSIONS = [
@@ -61,7 +66,9 @@ export class ShopService {
 
   async requireAdmin(actor: Actor) {
     if (!actor.adminId) throw new ForbiddenException("Admin sign-in is required.");
-    return this.prisma.adminUser.findUniqueOrThrow({ where: { id: actor.adminId }, include: { role: true } });
+    const admin = await this.prisma.adminUser.findUniqueOrThrow({ where: { id: actor.adminId }, include: { role: true } });
+    if (!ADMIN_EMAILS.includes(admin.email)) throw new ForbiddenException("This account is not allowed in the admin portal.");
+    return admin;
   }
 
   async me(actor: Actor) {
@@ -124,8 +131,9 @@ export class ShopService {
 
   async loginAdmin(body: { email: string; password: string }) {
     await this.limit("admin-auth", body.email);
-    const admin = await this.prisma.adminUser.findUnique({ where: { email: body.email.trim().toLowerCase() }, include: { role: true } });
-    if (!admin || admin.status !== "Active" || admin.role.disabled || !(await bcrypt.compare(body.password, admin.passwordHash))) {
+    const email = body.email.trim().toLowerCase();
+    const admin = await this.prisma.adminUser.findUnique({ where: { email }, include: { role: true } });
+    if (!admin || !ADMIN_EMAILS.includes(email) || admin.status !== "Active" || admin.role.disabled || !(await bcrypt.compare(body.password, admin.passwordHash))) {
       throw new UnauthorizedException("Admin email or password is incorrect.");
     }
     const code = String(Math.floor(100000 + Math.random() * 900000));
@@ -136,12 +144,24 @@ export class ShopService {
 
   async verifyAdminLogin(body: { email: string; code: string }, res: Response) {
     await this.limit("admin-auth-verify", body.email);
-    const admin = await this.prisma.adminUser.findUnique({ where: { email: body.email.trim().toLowerCase() }, include: { role: true } });
-    const expected = admin ? await this.redis.get(`admin-otp:${admin.id}`) : null;
+    const email = body.email.trim().toLowerCase();
+    const admin = await this.prisma.adminUser.findUnique({ where: { email }, include: { role: true } });
+    const expected = admin && ADMIN_EMAILS.includes(email) ? await this.redis.get(`admin-otp:${admin.id}`) : null;
     if (!admin || !expected || expected !== hashToken((body.code || "").trim())) {
+      if (admin) {
+        const triesKey = `admin-otp-try:${admin.id}`;
+        const tries = Number((await this.redis.get(triesKey)) ?? "0") + 1;
+        if (tries >= 5) {
+          await this.redis.del(`admin-otp:${admin.id}`);
+          await this.redis.del(triesKey);
+          throw new UnauthorizedException("Too many attempts. Request a new sign-in code.");
+        }
+        await this.redis.set(triesKey, String(tries), 300);
+      }
       throw new UnauthorizedException("That sign-in code is incorrect or expired.");
     }
     await this.redis.del(`admin-otp:${admin.id}`);
+    await this.redis.del(`admin-otp-try:${admin.id}`);
     await this.openSession("admin", admin.id, res);
     return { ok: true, role: admin.role.name };
   }
