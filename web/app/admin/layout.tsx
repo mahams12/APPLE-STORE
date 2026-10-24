@@ -2,16 +2,31 @@
 
 import { Bell, Menu, Search } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { useSession } from "@/lib/session-store";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const admin = useSession((s) => s.admin);
-  if (pathname === "/admin/login") return <>{children}</>;
+  const ready = useSession((s) => s.ready);
+  const isLogin = pathname === "/admin/login";
+
+  useEffect(() => {
+    if (!isLogin && ready && !admin) router.replace("/admin/login");
+  }, [isLogin, ready, admin, router]);
+
+  if (isLogin) return <>{children}</>;
+  if (!ready || !admin) {
+    return (
+      <div className="grid min-h-dvh place-items-center bg-canvas">
+        <div className="size-10 animate-spin rounded-full border-2 border-line border-t-brand-500" aria-label="Loading" />
+      </div>
+    );
+  }
   return (
     <div className="flex min-h-dvh bg-canvas">
       <AdminSidebar mobileOpen={open} onClose={() => setOpen(false)} />
