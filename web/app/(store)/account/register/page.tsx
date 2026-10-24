@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AuthCard, Field } from "@/components/auth/auth-card";
+import { AuthCard, Field, PasswordField } from "@/components/auth/auth-card";
 import { useCart } from "@/lib/cart-store";
 import { api, errorMessage } from "@/lib/client";
 import { useSession } from "@/lib/session-store";
@@ -37,7 +37,7 @@ export default function RegisterPage() {
         </div>
         <Field label="Email" type="email" required autoComplete="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
         <div>
-          <Field label="Password" type="password" required minLength={8} autoComplete="new-password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
+          <PasswordField label="Password" required minLength={8} autoComplete="new-password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
           <div className="mt-2 grid grid-cols-4 gap-1.5">
             {[0, 1, 2, 3].map((i) => <span key={i} className={`h-1 rounded-full transition-colors duration-300 ${i < strength ? (strength < 3 ? "bg-star" : "bg-success") : "bg-line"}`} />)}
           </div>

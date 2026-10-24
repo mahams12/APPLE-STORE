@@ -5,7 +5,7 @@ import { KeyRound, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Field } from "@/components/auth/auth-card";
+import { Field, PasswordField } from "@/components/auth/auth-card";
 import { Logo } from "@/components/site/logo";
 import { api, errorMessage } from "@/lib/client";
 import { useSession } from "@/lib/session-store";
@@ -62,7 +62,7 @@ export default function AdminLogin() {
           <p className="mt-1 text-sm text-muted">Sign in with your staff account. A security code will be emailed to you.</p>
           <div className="mt-6 space-y-4">
             <Field label="Email" type="email" required autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <Field label="Password" type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordField label="Password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
             <button disabled={busy} className="btn btn-primary h-12 w-full text-base">{busy ? "Checking…" : "Continue"}</button>
           </div>
         </m.form>

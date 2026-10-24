@@ -1,7 +1,9 @@
 "use client";
 
-import { m } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
+import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
+import { useState } from "react";
 
 export function AuthCard({ title, subtitle, children, footer }: { title: string; subtitle?: string; children: React.ReactNode; footer?: React.ReactNode }) {
   return (
@@ -31,6 +33,37 @@ export function Field({ label, ...props }: React.InputHTMLAttributes<HTMLInputEl
     <label className="block">
       <span className="label">{label}</span>
       <input className="input" {...props} />
+    </label>
+  );
+}
+
+export function PasswordField({ label, ...props }: Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> & { label: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <label className="block">
+      <span className="label">{label}</span>
+      <div className="relative">
+        <input className="input pr-12" type={show ? "text" : "password"} {...props} />
+        <button
+          type="button"
+          onClick={() => setShow((v) => !v)}
+          aria-label={show ? "Hide password" : "Show password"}
+          className="absolute right-2 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-full text-muted transition hover:bg-canvas hover:text-ink"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <m.span
+              key={show ? "hide" : "show"}
+              initial={{ opacity: 0, scale: 0.4, rotate: -120 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              exit={{ opacity: 0, scale: 0.4, rotate: 120 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="grid place-items-center"
+            >
+              {show ? <EyeOff size={18} /> : <Eye size={18} />}
+            </m.span>
+          </AnimatePresence>
+        </button>
+      </div>
     </label>
   );
 }
