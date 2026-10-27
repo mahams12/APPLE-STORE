@@ -27,6 +27,15 @@ async function main() {
   process.env.PAYMENT_WEBHOOK_SECRET ||= "dev-webhook-secret";
   process.env.APP_URL ||= "http://localhost:3456";
   process.env.API_PORT ||= "4000";
+  const managed = new Set([
+    "DATABASE_URL", "REDIS_URL", "API_PORT", "SESSION_SECRET",
+    "PAYMENT_WEBHOOK_SECRET", "APP_URL", "USE_EMBEDDED_POSTGRES",
+  ]);
+  const extraEnv = existsSync(path.join(process.cwd(), ".env"))
+    ? (await import("node:fs")).readFileSync(path.join(process.cwd(), ".env"), "utf8")
+        .split("\n")
+        .filter((line) => line.includes("=") && !managed.has(line.split("=")[0].trim()))
+    : [];
   writeFileSync(
     path.join(process.cwd(), ".env"),
     [
@@ -37,6 +46,7 @@ async function main() {
       `PAYMENT_WEBHOOK_SECRET=${process.env.PAYMENT_WEBHOOK_SECRET}`,
       `APP_URL=${process.env.APP_URL}`,
       "USE_EMBEDDED_POSTGRES=true",
+      ...extraEnv,
       "",
     ].join("\n"),
   );
