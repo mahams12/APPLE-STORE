@@ -5,6 +5,7 @@ import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DemoBanner, PageHeader, Row, SearchInput, Table } from "@/components/admin/ui";
+import { PasswordField } from "@/components/auth/auth-card";
 import { StatusPill } from "@/components/ui/misc";
 import { ROLES, STAFF } from "@/lib/catalog";
 import { api, errorMessage } from "@/lib/client";
@@ -85,7 +86,7 @@ export default function UsersPage() {
                 <label><span className="label">Role</span><select className="input" value={edit.roleId} onChange={(e) => set("roleId", e.target.value)}>{data.roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></label>
                 <label><span className="label">Credit Limit</span><input className="input" type="number" min={0} value={edit.creditLimit} onChange={(e) => set("creditLimit", Number(e.target.value))} /></label>
                 <label><span className="label">Status</span><select className="input" value={edit.status} onChange={(e) => set("status", e.target.value)}><option>Active</option><option>Disabled</option></select></label>
-                <label><span className="label">{edit.id ? "New Password" : "Password"}</span><input className="input" type="password" autoComplete="new-password" placeholder={edit.id ? "Leave blank to keep" : ""} value={edit.password} onChange={(e) => set("password", e.target.value)} /></label>
+                <PasswordField label={edit.id ? "New Password" : "Password"} autoComplete="new-password" placeholder={edit.id ? "Leave blank to keep" : ""} value={edit.password} onChange={(e) => set("password", e.target.value)} />
                 <label className="sm:col-span-2"><span className="label">Address</span><textarea className="input min-h-20 py-3" value={edit.address} onChange={(e) => set("address", e.target.value)} /></label>
               </div>
               <div className="flex gap-3 border-t border-line p-6"><button type="button" onClick={() => setEdit(null)} className="btn btn-outline flex-1">Cancel</button><button disabled={busy} className="btn btn-primary flex-1">{busy ? "Saving…" : "Save"}</button></div>
