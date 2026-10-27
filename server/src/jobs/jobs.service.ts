@@ -26,7 +26,7 @@ export class JobsService implements OnModuleDestroy {
     }
     try {
       this.queue = new Queue("istore-jobs", {
-        connection: client.duplicate(),
+        connection: client.duplicate({ maxRetriesPerRequest: null }),
         defaultJobOptions: {
           attempts: 5,
           backoff: { type: "exponential", delay: 2000 },
@@ -42,7 +42,7 @@ export class JobsService implements OnModuleDestroy {
             await this.email.send(data.template, data.to, data.payload || {});
           }
         },
-        { connection: client.duplicate() },
+        { connection: client.duplicate({ maxRetriesPerRequest: null }) },
       );
       this.worker.on("failed", (job, err) => {
         logWarn("jobs.failed", { name: job?.name, message: err.message });

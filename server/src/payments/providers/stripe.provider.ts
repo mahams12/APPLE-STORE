@@ -15,7 +15,7 @@ export class StripeProvider implements PaymentProvider {
     private readonly webhookSecret: string | null,
   ) {}
 
-  async createPayment(input: CreatePaymentInput) {
+  async createPayment(input: CreatePaymentInput): Promise<{ redirectUrl: string | null; externalId?: string }> {
     // Boundary only: wire Stripe Checkout / PaymentIntents when credentials are live.
     // Until then, refuse rather than fake a successful charge.
     if (!this.secretKey.startsWith("sk_")) {

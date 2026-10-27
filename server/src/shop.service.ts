@@ -577,7 +577,8 @@ export class ShopService {
 
   async saveProduct(actor: Actor, body: ProductInput) {
     const admin = await this.requireAdmin(actor);
-    if (!body.name || Number(body.salePrice) <= 0) throw new BadRequestException("Add a name and a sale price.");
+    if (!body.name || !Number.isFinite(Number(body.salePrice)) || Number(body.salePrice) <= 0)
+      throw new BadRequestException("Add a name and a sale price.");
     const existing = body.id ? await this.prisma.product.findUnique({ where: { id: body.id }, include: { variants: true } }) : null;
     const category = await this.prisma.category.upsert({ where: { name: body.category || "Accessories" }, update: {}, create: { name: body.category || "Accessories", slug: slugify(body.category || "accessories") } });
     const existingColors = existing?.variants?.length
@@ -586,7 +587,11 @@ export class ShopService {
     const colors = body.colors?.length ? body.colors : existingColors.length ? existingColors : [{ name: "Black", hex: "#1C1C1E" }];
     const storages = body.storages?.length ? body.storages : ["128GB"];
     const extras = body.extras?.length ? body.extras : ["Standard"];
-    const slug = uniqueSlug(body.slug || slugify(body.name));
+    const baseSlug = slugify(body.slug || slugify(body.name));
+    let slug = baseSlug;
+    for (let n = 2; await this.prisma.product.findUnique({ where: { slug } }); n += 1) {
+      slug = `${baseSlug}-${n}`;
+    }
     const data = {
       name: body.name,
       slug,
@@ -626,6 +631,17 @@ export class ShopService {
           create: { productId: product.id, sku: `${product.sku}-${slugify(combo.color.name)}-${slugify(combo.storage)}-${slugify(combo.extra)}`, color: combo.color.name, colorHex: combo.color.hex, storage: combo.storage, extra: combo.extra, price, stock },
           update: { price, stock, colorHex: combo.color.hex },
         });
+      }
+    }
+    if (existing && !combosProvided && Number.isFinite(Number(body.stock))) {
+      const vars = await this.prisma.productVariant.findMany({ where: { productId: product.id } });
+      const each = Math.floor(Number(body.stock) / Math.max(1, vars.length));
+      let remainder = Number(body.stock) - each * vars.length;
+      for (const v of vars) {
+        const stock = each + (remainder > 0 ? 1 : 0);
+        if (remainder > 0) remainder -= 1;
+        if (v.stock !== stock)
+          await this.prisma.productVariant.update({ where: { id: v.id }, data: { stock } });
       }
     }
     if (!existing || combosProvided) {
@@ -693,8 +709,10 @@ export class ShopService {
 
   async saveCoupon(actor: Actor, body: { code: string; type: string; amount: number; active?: boolean }) {
     const admin = await this.requireAdmin(actor);
-    const code = body.code.trim().toUpperCase();
+    const code = (body.code || "").trim().toUpperCase();
     if (!code) throw new BadRequestException("Coupon code is required.");
+    if (!body.type || !Number.isFinite(Number(body.amount)))
+      throw new BadRequestException("Coupon type and amount are required.");
     const coupon = await this.prisma.coupon.upsert({
       where: { code },
       create: { code, type: body.type, amount: body.amount, active: body.active !== false },
@@ -959,10 +977,6 @@ function unique<T>(items: T[], key: (item: T) => string) {
 
 function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "item";
-}
-
-function uniqueSlug(value: string) {
-  return value;
 }
 
 const UI_STATUS: Record<string, string> = {
