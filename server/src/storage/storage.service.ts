@@ -77,7 +77,7 @@ async function s3Request(opts: {
   const res = await fetch(target, {
     method: opts.method,
     headers,
-    body: opts.body,
+    body: opts.body ? new Uint8Array(opts.body) : undefined,
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
