@@ -4,6 +4,8 @@
  * Production MUST supply an external DATABASE_URL — no silent fallback.
  */
 
+import "dotenv/config";
+
 export type AppConfig = {
   isProd: boolean;
   apiPort: number;

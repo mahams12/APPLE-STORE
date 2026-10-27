@@ -8,6 +8,7 @@ import { PaymentService } from "./payments/payment.service";
 import { RateLimitService } from "./redis/rate-limit";
 import { RedisService } from "./redis/redis.service";
 import { JobsService } from "./jobs/jobs.service";
+import { EmailService } from "./email/email.service";
 import type { EmailTemplate } from "./email/email.service";
 import { logInfo } from "./logger";
 
@@ -31,6 +32,7 @@ export class ShopService {
   private readonly rateLimit: RateLimitService;
   private readonly redis: RedisService;
   private readonly jobs: JobsService;
+  private readonly email: EmailService;
 
   constructor(
     @Inject(PrismaService) prisma: PrismaService,
@@ -38,12 +40,14 @@ export class ShopService {
     @Inject(RateLimitService) rateLimit: RateLimitService,
     @Inject(RedisService) redis: RedisService,
     @Inject(JobsService) jobs: JobsService,
+    @Inject(EmailService) email: EmailService,
   ) {
     this.prisma = prisma;
     this.payments = payments;
     this.rateLimit = rateLimit;
     this.redis = redis;
     this.jobs = jobs;
+    this.email = email;
   }
 
   async limit(bucket: string, identity: string) {
@@ -139,7 +143,7 @@ export class ShopService {
     const code = String(Math.floor(100000 + Math.random() * 900000));
     await this.redis.set(`admin-otp:${admin.id}`, hashToken(code), 300);
     await this.note("admin-notification", admin.email, { code });
-    return { ok: true, requiresVerification: true, devCode: process.env.NODE_ENV === "production" ? undefined : code };
+    return { ok: true, requiresVerification: true, devCode: !this.email.configured() && process.env.NODE_ENV !== "production" ? code : undefined };
   }
 
   async verifyAdminLogin(body: { email: string; code: string }, res: Response) {
