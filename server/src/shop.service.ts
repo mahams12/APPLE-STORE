@@ -133,12 +133,12 @@ export class ShopService {
     return { ok: true };
   }
 
-  async loginAdmin(body: { email: string; password: string }) {
+  async loginAdmin(body: { email: string; password?: string }) {
     await this.limit("admin-auth", body.email);
     const email = body.email.trim().toLowerCase();
     const admin = await this.prisma.adminUser.findUnique({ where: { email }, include: { role: true } });
-    if (!admin || !ADMIN_EMAILS.includes(email) || admin.status !== "Active" || admin.role.disabled || !(await bcrypt.compare(body.password, admin.passwordHash))) {
-      throw new UnauthorizedException("Admin email or password is incorrect.");
+    if (!admin || !ADMIN_EMAILS.includes(email) || admin.status !== "Active" || admin.role.disabled) {
+      throw new UnauthorizedException("This email cannot access the admin portal.");
     }
     const code = String(Math.floor(100000 + Math.random() * 900000));
     await this.redis.set(`admin-otp:${admin.id}`, hashToken(code), 300);
