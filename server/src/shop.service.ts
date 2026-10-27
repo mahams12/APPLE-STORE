@@ -504,8 +504,11 @@ export class ShopService {
       : actor.userId
         ? { userId: actor.userId }
         : { id: { in: actor.receipts.length ? actor.receipts : ["none"] } };
-    const rows = await this.prisma.order.findMany({ where, include: orderInclude, orderBy: { createdAt: "desc" } });
-    return { orders: rows.map(presentOrder) };
+    const [total, rows] = await Promise.all([
+      this.prisma.order.count({ where }),
+      this.prisma.order.findMany({ where, include: orderInclude, orderBy: { createdAt: "desc" }, take: actor.adminId ? 200 : 100 }),
+    ]);
+    return { orders: rows.map(presentOrder), total };
   }
 
   async order(actor: Actor, id: string) {
@@ -674,7 +677,7 @@ export class ShopService {
 
   async customers(actor: Actor) {
     await this.requireAdmin(actor);
-    const users = await this.prisma.user.findMany({ include: { _count: { select: { orders: true } } }, orderBy: { createdAt: "desc" } });
+    const users = await this.prisma.user.findMany({ include: { _count: { select: { orders: true } } }, orderBy: { createdAt: "desc" }, take: 500 });
     return { customers: users.map((user) => ({ id: user.id, name: `${user.firstName} ${user.lastName}`, email: user.email, orders: user._count.orders, verified: user.emailVerified })) };
   }
 
