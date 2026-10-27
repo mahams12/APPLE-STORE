@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import compression from "compression";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
@@ -16,6 +17,7 @@ export async function startServer() {
 
   const app = await NestFactory.create(AppModule);
   app.use(helmet({ contentSecurityPolicy: false }));
+  app.use(compression());
   app.use(cookieParser());
   app.enableCors({ origin: cfg.appUrl, credentials: true });
   app.useGlobalFilters(new HttpFilter());
