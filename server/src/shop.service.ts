@@ -490,6 +490,12 @@ export class ShopService {
     return payment.orderId;
   }
 
+  /** Safepay posts the signed tracker back here after hosted checkout. */
+  async safepayFulfill(tracker: string | undefined, sig: string | undefined) {
+    const paymentId = await this.payments.verifySafepayReturn(tracker, sig);
+    return this.markPaid(paymentId, "safepay");
+  }
+
   async hostedPayment(id: string) {
     const payment = await this.prisma.payment.findUnique({ where: { id }, include: { order: true } });
     if (!payment) throw new NotFoundException("Payment not found.");

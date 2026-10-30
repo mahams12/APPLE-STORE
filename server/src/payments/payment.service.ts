@@ -6,6 +6,7 @@ import { hashConfirmToken, mintConfirmToken, tokensMatch } from "./payment-token
 import type { PaymentProvider } from "./provider";
 import { HostedStubProvider } from "./providers/hosted-stub.provider";
 import { StripeProvider } from "./providers/stripe.provider";
+import { SafepayProvider } from "./providers/safepay.provider";
 
 @Injectable()
 export class PaymentService {
@@ -22,6 +23,9 @@ export class PaymentService {
     if (cfg.paymentProvider === "stripe" && cfg.stripeSecretKey) {
       return new StripeProvider(cfg.stripeSecretKey, cfg.stripeWebhookSecret);
     }
+    if (cfg.paymentProvider === "safepay" && cfg.safepay) {
+      return new SafepayProvider(cfg.safepay, cfg.appUrl);
+    }
     return new HostedStubProvider();
   }
 
@@ -34,7 +38,7 @@ export class PaymentService {
     const cfg = loadConfig();
     if (cfg.isProd && this.provider.name === "hosted-stub") {
       throw new BadRequestException(
-        "Card payments are not configured for production. Set PAYMENT_PROVIDER=stripe with valid credentials.",
+        "Card payments are not configured for production. Set PAYMENT_PROVIDER=safepay (or stripe) with valid credentials.",
       );
     }
   }
@@ -61,8 +65,31 @@ export class PaymentService {
       ...input,
       confirmToken: minted.token,
     });
+    if (created.externalId) {
+      await this.prisma.payment.update({
+        where: { id: input.paymentId },
+        data: { externalId: created.externalId },
+      });
+    }
     logInfo("payment.created", { paymentId: input.paymentId, provider: this.provider.name });
     return created;
+  }
+
+  /**
+   * Safepay posts `tracker` + `sig` back to /backend/payments/safepay/fulfill.
+   * Verifies the HMAC signature and resolves the tracker to our payment id.
+   */
+  async verifySafepayReturn(tracker: string | undefined, sig: string | undefined): Promise<string> {
+    const provider = this.provider as Partial<SafepayProvider>;
+    if (this.provider.name !== "safepay" || typeof provider.verifySignature !== "function") {
+      throw new BadRequestException("Safepay is not the active payment provider.");
+    }
+    if (!tracker || !sig || !provider.verifySignature(tracker, sig)) {
+      throw new UnauthorizedException("Invalid payment signature.");
+    }
+    const payment = await this.prisma.payment.findFirst({ where: { externalId: tracker } });
+    if (!payment) throw new NotFoundException("Payment not found.");
+    return payment.id;
   }
 
   async hostedPage(paymentId: string, token: string | undefined) {

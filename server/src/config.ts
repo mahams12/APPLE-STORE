@@ -30,9 +30,14 @@ export type AppConfig = {
     password: string;
     from: string;
   } | null;
-  paymentProvider: "hosted-stub" | "stripe";
+  paymentProvider: "hosted-stub" | "stripe" | "safepay";
   stripeSecretKey: string | null;
   stripeWebhookSecret: string | null;
+  safepay: {
+    clientKey: string;
+    secretKey: string;
+    environment: "sandbox" | "production";
+  } | null;
 };
 
 function required(name: string, value: string | undefined): string {
@@ -86,7 +91,8 @@ export function loadConfig(): AppConfig {
     Boolean(process.env.SMTP_FROM?.trim());
 
   const providerEnv = (process.env.PAYMENT_PROVIDER || "hosted-stub").toLowerCase();
-  const paymentProvider: "hosted-stub" | "stripe" = providerEnv === "stripe" ? "stripe" : "hosted-stub";
+  const paymentProvider: "hosted-stub" | "stripe" | "safepay" =
+    providerEnv === "stripe" ? "stripe" : providerEnv === "safepay" ? "safepay" : "hosted-stub";
 
   if (isProd && paymentProvider === "hosted-stub") {
     // Allowed to boot API for health/admin, but card checkout must refuse (enforced in payment service).
@@ -95,6 +101,15 @@ export function loadConfig(): AppConfig {
   if (isProd && paymentProvider === "stripe" && !process.env.STRIPE_SECRET_KEY?.trim()) {
     throw new Error(
       "[I.STORE config] PAYMENT_PROVIDER=stripe requires STRIPE_SECRET_KEY in production.",
+    );
+  }
+
+  const safepayClientKey = process.env.SAFE_PAY_CLIENT_KEY?.trim() || null;
+  const safepaySecretKey = process.env.SAFE_PAY_SECRET_KEY?.trim() || null;
+  const safepayEnv = (process.env.SAFE_PAY_ENVIRONMENT || "sandbox").toLowerCase() === "production" ? "production" : "sandbox";
+  if (paymentProvider === "safepay" && (!safepayClientKey || !safepaySecretKey)) {
+    throw new Error(
+      "[I.STORE config] PAYMENT_PROVIDER=safepay requires SAFE_PAY_CLIENT_KEY and SAFE_PAY_SECRET_KEY.",
     );
   }
 
@@ -129,5 +144,9 @@ export function loadConfig(): AppConfig {
     paymentProvider,
     stripeSecretKey: process.env.STRIPE_SECRET_KEY?.trim() || null,
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET?.trim() || null,
+    safepay:
+      safepayClientKey && safepaySecretKey
+        ? { clientKey: safepayClientKey, secretKey: safepaySecretKey, environment: safepayEnv }
+        : null,
   };
 }
