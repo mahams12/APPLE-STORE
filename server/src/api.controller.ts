@@ -240,6 +240,18 @@ export class ApiController {
     res.redirect(`${process.env.APP_URL || "http://localhost:3456"}/orders/${orderId}`);
   }
 
+  @Get("payments/safepay/fulfill")
+  async safepayFulfillGet(@Query() q: { tracker?: string; sig?: string }, @Res() res: Response) {
+    const orderId = await this.shop.safepayFulfill(q.tracker, q.sig);
+    res.redirect(`${process.env.APP_URL || "http://localhost:3456"}/orders/${orderId}`);
+  }
+
+  @Post("payments/safepay/fulfill")
+  async safepayFulfillPost(@Body() body: { tracker?: string; sig?: string }, @Res() res: Response) {
+    const orderId = await this.shop.safepayFulfill(body.tracker, body.sig);
+    res.redirect(`${process.env.APP_URL || "http://localhost:3456"}/orders/${orderId}`);
+  }
+
   @Post("payments/webhook")
   async webhook(@Req() req: Request, @Body() body: { event?: string; paymentId?: string }) {
     const secret = process.env.PAYMENT_WEBHOOK_SECRET || "dev-webhook-secret";

@@ -277,6 +277,7 @@ model Payment {
   provider             String
   status               String
   amount               Decimal              @db.Decimal(10, 2)
+  externalId           String?
   idempotencyKey       String?              @unique
   confirmTokenHash     String?
   confirmTokenExpires  DateTime?
