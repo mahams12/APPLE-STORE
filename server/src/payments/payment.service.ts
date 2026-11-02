@@ -76,19 +76,20 @@ export class PaymentService {
   }
 
   /**
-   * Safepay posts `tracker` + `sig` back to /backend/payments/safepay/fulfill.
-   * Verifies the HMAC signature and resolves the tracker to our payment id.
+   * Safepay redirects the shopper to /backend/payments/safepay/fulfill?tracker=...
+   * We confirm the tracker is TRACKER_ENDED server-side, then resolve it to our payment id.
    */
-  async verifySafepayReturn(tracker: string | undefined, sig: string | undefined): Promise<string> {
+  async verifySafepayReturn(tracker: string | undefined): Promise<string> {
     const provider = this.provider as Partial<SafepayProvider>;
-    if (this.provider.name !== "safepay" || typeof provider.verifySignature !== "function") {
+    if (this.provider.name !== "safepay" || typeof provider.confirmPaid !== "function") {
       throw new BadRequestException("Safepay is not the active payment provider.");
     }
-    if (!tracker || !sig || !provider.verifySignature(tracker, sig)) {
-      throw new UnauthorizedException("Invalid payment signature.");
-    }
+    if (!tracker) throw new UnauthorizedException("Missing payment tracker.");
     const payment = await this.prisma.payment.findFirst({ where: { externalId: tracker } });
     if (!payment) throw new NotFoundException("Payment not found.");
+    if (!(await provider.confirmPaid(tracker))) {
+      throw new UnauthorizedException("Payment is not completed.");
+    }
     return payment.id;
   }
 

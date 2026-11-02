@@ -241,14 +241,14 @@ export class ApiController {
   }
 
   @Get("payments/safepay/fulfill")
-  async safepayFulfillGet(@Query() q: { tracker?: string; sig?: string }, @Res() res: Response) {
-    const orderId = await this.shop.safepayFulfill(q.tracker, q.sig);
+  async safepayFulfillGet(@Query() q: { tracker?: string }, @Res() res: Response) {
+    const orderId = await this.shop.safepayFulfill(q.tracker);
     res.redirect(`${process.env.APP_URL || "http://localhost:3456"}/orders/${orderId}`);
   }
 
   @Post("payments/safepay/fulfill")
-  async safepayFulfillPost(@Body() body: { tracker?: string; sig?: string }, @Res() res: Response) {
-    const orderId = await this.shop.safepayFulfill(body.tracker, body.sig);
+  async safepayFulfillPost(@Body() body: { tracker?: string }, @Res() res: Response) {
+    const orderId = await this.shop.safepayFulfill(body.tracker);
     res.redirect(`${process.env.APP_URL || "http://localhost:3456"}/orders/${orderId}`);
   }
 

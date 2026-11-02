@@ -490,9 +490,9 @@ export class ShopService {
     return payment.orderId;
   }
 
-  /** Safepay posts the signed tracker back here after hosted checkout. */
-  async safepayFulfill(tracker: string | undefined, sig: string | undefined) {
-    const paymentId = await this.payments.verifySafepayReturn(tracker, sig);
+  /** Safepay redirects the shopper back with ?tracker= after hosted checkout. */
+  async safepayFulfill(tracker: string | undefined) {
+    const paymentId = await this.payments.verifySafepayReturn(tracker);
     return this.markPaid(paymentId, "safepay");
   }
 

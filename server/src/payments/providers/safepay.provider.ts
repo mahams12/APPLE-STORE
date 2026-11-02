@@ -1,14 +1,15 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
 import type { CreatePaymentInput, PaymentProvider, PaymentStatus, WebhookResult } from "../provider";
 import type { AppConfig } from "../../config";
 
 type SafepayConfig = NonNullable<AppConfig["safepay"]>;
 
 /**
- * Safepay hosted checkout.
- * Flow: create a tracker via /order/v1/init -> redirect the customer to the
- * hosted /components page -> Safepay posts back `tracker` + `sig` to our
- * fulfill endpoint -> we verify sig = HMAC-SHA256(secret, tracker).
+ * Safepay hosted checkout (official Payments 2.0 flow).
+ * 1. POST /order/payments/v3/        -> tracker token
+ * 2. POST /client/passport/v1/token  -> short-lived tbt auth token
+ * 3. Redirect shopper to /checkout/pay?tracker&tbt&environment&source&redirect_url&cancel_url
+ * 4. On success Safepay redirects to redirect_url?tracker=track_...
+ *    We confirm by GET /reporter/api/v1/payments/{tracker} -> state === TRACKER_ENDED.
  */
 export class SafepayProvider implements PaymentProvider {
   readonly name = "safepay";
@@ -28,48 +29,76 @@ export class SafepayProvider implements PaymentProvider {
 
   private checkoutBase() {
     return this.cfg.environment === "production"
-      ? "https://www.getsafepay.com"
+      ? "https://getsafepay.com"
       : "https://sandbox.api.getsafepay.com";
   }
 
+  private headers() {
+    return {
+      "Content-Type": "application/json",
+      "X-SFPY-MERCHANT-SECRET": this.cfg.secretKey,
+    };
+  }
+
   async createPayment(input: CreatePaymentInput) {
-    const res = await fetch(`${this.apiBase()}/order/v1/init`, {
+    const init = await fetch(`${this.apiBase()}/order/payments/v3/`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: this.headers(),
       body: JSON.stringify({
-        client: this.cfg.clientKey,
-        amount: input.amount,
+        merchant_api_key: this.cfg.clientKey,
+        intent: "CYBERSOURCE",
+        mode: "payment",
+        entry_mode: "raw",
         currency: input.currency || "USD",
-        environment: this.cfg.environment,
+        amount: Math.round(input.amount * 100), // lowest denomination
+        metadata: { order_id: input.orderId },
       }),
     });
-    const data = (await res.json().catch(() => null)) as {
-      data?: { token?: string };
+    const initData = (await init.json().catch(() => null)) as {
+      data?: { tracker?: { token?: string } };
       status?: { message?: string };
     } | null;
-    const tracker = data?.data?.token;
-    if (!res.ok || !tracker) {
+    const tracker = initData?.data?.tracker?.token;
+    if (!init.ok || !tracker) {
       throw new Error(
-        `Safepay checkout failed (${res.status}): ${data?.status?.message || "could not create payment"}`,
+        `Safepay checkout failed (${init.status}): ${initData?.status?.message || "could not create payment"}`,
       );
     }
+
+    const tbtRes = await fetch(`${this.apiBase()}/client/passport/v1/token`, {
+      method: "POST",
+      headers: this.headers(),
+    });
+    const tbtData = (await tbtRes.json().catch(() => null)) as { data?: string } | null;
+    const tbt = tbtData?.data;
+    if (!tbtRes.ok || !tbt) {
+      throw new Error(`Safepay auth token failed (${tbtRes.status})`);
+    }
+
     const params = new URLSearchParams({
-      env: this.cfg.environment,
-      beacon: tracker,
-      source: "custom",
-      order_id: input.orderId,
+      environment: this.cfg.environment,
+      tbt,
+      tracker,
+      source: "hosted",
       redirect_url: `${this.appUrl}/backend/payments/safepay/fulfill`,
       cancel_url: input.returnUrl,
     });
-    return { redirectUrl: `${this.checkoutBase()}/components?${params.toString()}`, externalId: tracker };
+    return { redirectUrl: `${this.checkoutBase()}/embedded/?${params.toString()}`, externalId: tracker };
   }
 
-  /** Verify the tracker return signature posted back by Safepay checkout. */
-  verifySignature(tracker: string, signature: string): boolean {
-    const expected = createHmac("sha256", this.cfg.secretKey).update(tracker).digest("hex");
-    const left = Buffer.from(expected);
-    const right = Buffer.from(signature || "");
-    return left.length === right.length && timingSafeEqual(left, right);
+  /**
+   * Confirm the tracker our redirect_url received actually completed payment.
+   * Queries Safepay server-side — the return URL carries no signature to check.
+   */
+  async confirmPaid(tracker: string): Promise<boolean> {
+    const res = await fetch(`${this.apiBase()}/reporter/api/v1/payments/${encodeURIComponent(tracker)}`, {
+      headers: this.headers(),
+    });
+    if (!res.ok) return false;
+    const data = (await res.json().catch(() => null)) as {
+      data?: { state?: string; client?: { api_key?: string } };
+    } | null;
+    return data?.data?.state === "TRACKER_ENDED" && data?.data?.client?.api_key === this.cfg.clientKey;
   }
 
   async verifyPayment(): Promise<PaymentStatus> {
