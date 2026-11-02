@@ -2,13 +2,14 @@
 
 import { m } from "framer-motion";
 import { Tag } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCart } from "@/lib/cart-store";
 import { errorMessage } from "@/lib/client";
 import { money } from "@/lib/format";
 
-export function Summary({ cta }: { cta?: React.ReactNode }) {
+export function Summary({ cta, showItems }: { cta?: React.ReactNode; showItems?: boolean }) {
   const { cart, coupon, busy } = useCart();
   const [code, setCode] = useState("");
   const t = cart.totals;
@@ -31,6 +32,23 @@ export function Summary({ cta }: { cta?: React.ReactNode }) {
   return (
     <div className="card p-6">
       <h2 className="text-xl font-medium">Order Summary</h2>
+      {showItems && (
+        <ul className="mt-5 space-y-3">
+          {cart.items.map((item) => (
+            <li key={item.id} className="flex items-center gap-3">
+              <div className="relative size-12 shrink-0 overflow-hidden rounded-lg border border-line bg-canvas">
+                {item.image && <Image src={item.image} alt={item.name} fill sizes="48px" className="object-cover" />}
+                <span className="absolute -top-0 -right-0 grid size-5 place-items-center rounded-full bg-ink text-[10px] font-bold text-white">{item.qty}</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{item.name}</p>
+                <p className="truncate text-xs text-muted">{[item.color, item.storage, item.extra].filter(Boolean).join(" / ")}</p>
+              </div>
+              <span className="text-sm font-medium">{money(item.unitPrice * item.qty)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
       <form onSubmit={apply} className="mt-5 flex gap-2">
         <div className="relative flex-1">
           <Tag size={15} className="absolute top-1/2 left-3.5 -translate-y-1/2 text-muted" />
