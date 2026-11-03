@@ -366,10 +366,11 @@ export class ShopService {
 
   async checkout(actor: Actor, res: Response, body: CheckoutBody, idempotencyKey?: string) {
     if (!body.consent) throw new BadRequestException("Please accept the order terms.");
-    if (!body.firstName || !body.lastName || !body.email?.includes("@") || !body.line || !body.city || !body.postal) {
+    if (!body.firstName || !body.lastName || !body.email?.includes("@") || !body.line || !body.city) {
       throw new BadRequestException("Add your contact details and shipping address.");
     }
     if (!["Card", "Bank transfer", "Cash on delivery"].includes(body.method)) throw new BadRequestException("Choose a payment method.");
+    if (body.country && body.country.trim().toLowerCase() !== "pakistan") throw new BadRequestException("We currently deliver within Pakistan only.");
     if (idempotencyKey) {
       const existing = await this.prisma.order.findUnique({ where: { idempotencyKey }, include: orderInclude });
       if (existing) return { order: presentOrder(existing), paymentUrl: existing.payment?.provider === "card" && existing.payment.status !== "PAID" ? `/backend/payments/hosted/${existing.payment.id}` : null };
@@ -413,9 +414,10 @@ export class ShopService {
           shipping: priced.shipping,
           tax: priced.tax,
           total: priced.total,
-          addressLine: body.line.trim(),
+          addressLine: [body.line, body.line2, body.company].filter(Boolean).map((s) => String(s).trim()).join(", "),
           city: body.city.trim(),
-          postal: body.postal.trim(),
+          postal: (body.postal || "").trim(),
+          note: body.note ? String(body.note).slice(0, 500) : "",
           idempotencyKey: idempotencyKey || null,
           items: {
             create: lines.map((line) => ({
@@ -1017,7 +1019,7 @@ function fromUiStatus(status: string) {
   return map[status] ?? status;
 }
 
-type CheckoutBody = { firstName: string; lastName: string; email: string; phone?: string; line: string; city: string; postal: string; method: string; consent: boolean };
+type CheckoutBody = { firstName: string; lastName: string; email: string; phone?: string; line: string; line2?: string; company?: string; city: string; postal?: string; country?: string; method: string; consent: boolean; note?: string };
 type ProductInput = {
   id?: string; name: string; slug?: string; sku?: string; category: string; brand: string; description?: string;
   price: number; salePrice: number; stock: number; image?: string; gallery?: string[]; storages?: string[];
