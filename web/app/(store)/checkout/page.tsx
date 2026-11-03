@@ -20,7 +20,7 @@ const METHODS = [
   { id: "Bank transfer", icon: Landmark, body: "Invoice with bank details", note: "An invoice with our bank details will be emailed to you. Your order ships after the transfer clears." },
 ];
 
-const COUNTRIES = ["Pakistan", "United States", "United Kingdom", "United Arab Emirates", "Saudi Arabia", "Canada", "Australia", "Germany", "France", "Turkey", "Other"];
+const COUNTRIES = ["Pakistan"];
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -43,10 +43,10 @@ export default function CheckoutPage() {
       <input className="input" placeholder={label} value={form === (f as Form) ? val(k as keyof typeof f) : form[k]} onChange={(e) => set({ ...form, [k]: e.target.value })} {...props} />
     </label>
   );
-  const countrySelect = <T extends Form>(form: T, set: React.Dispatch<React.SetStateAction<T>>) => (
+  const countrySelect = <T extends Form>(form: T, _set: React.Dispatch<React.SetStateAction<T>>) => (
     <label className="block">
-      <span className="label">Country/Region</span>
-      <select className="input" value={form.country} onChange={(e) => set({ ...form, country: e.target.value })}>
+      <span className="label">Country/Region — we deliver across Pakistan</span>
+      <select className="input" value={form.country} disabled>
         {COUNTRIES.map((c) => <option key={c}>{c}</option>)}
       </select>
     </label>

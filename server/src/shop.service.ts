@@ -370,6 +370,7 @@ export class ShopService {
       throw new BadRequestException("Add your contact details and shipping address.");
     }
     if (!["Card", "Bank transfer", "Cash on delivery"].includes(body.method)) throw new BadRequestException("Choose a payment method.");
+    if (body.country && body.country.trim().toLowerCase() !== "pakistan") throw new BadRequestException("We currently deliver within Pakistan only.");
     if (idempotencyKey) {
       const existing = await this.prisma.order.findUnique({ where: { idempotencyKey }, include: orderInclude });
       if (existing) return { order: presentOrder(existing), paymentUrl: existing.payment?.provider === "card" && existing.payment.status !== "PAID" ? `/backend/payments/hosted/${existing.payment.id}` : null };
